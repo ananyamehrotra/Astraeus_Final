@@ -10,19 +10,19 @@ const Schedule = () => {
 
   return (
     <div>
-      <h1>📅 Communication Schedule</h1>
-      
+      <h1>Communication Schedule</h1>
+
       <div className="card">
         <h2>Optimization Status</h2>
         <div style={optimizationStyle}>
           <div style={algorithmStyle}>
-            <h3>🔄 Current Algorithm</h3>
+            <h3>Current Algorithm</h3>
             <p>Basic Window Detection</p>
             <div style={efficiencyStyle}>Efficiency: 1.06%</div>
           </div>
           <div style={arrowStyle}>→</div>
           <div style={algorithmStyle}>
-            <h3>🤖 AI Algorithm (Coming Soon)</h3>
+            <h3>AI Algorithm (Coming Soon)</h3>
             <p>GNN + Reinforcement Learning</p>
             <div style={efficiencyStyle}>Expected: 1.3-1.5%</div>
           </div>
@@ -32,10 +32,10 @@ const Schedule = () => {
       <div className="card">
         <h2>Communication Windows</h2>
         <p>Optimal satellite-ground station communication opportunities</p>
-        
+
         <div style={scheduleHeaderStyle}>
-          <button className="btn">🔄 Refresh Schedule</button>
-          <button className="btn">🤖 Optimize with AI</button>
+          <button className="btn">Refresh Schedule</button>
+          <button className="btn">Optimize with AI</button>
         </div>
 
         <div style={tableStyle}>
@@ -46,7 +46,7 @@ const Schedule = () => {
             <div>Duration</div>
             <div>Quality</div>
           </div>
-          
+
           {schedules.map((schedule, index) => (
             <div key={index} style={rowStyle}>
               <div style={timeStyle}>{schedule.time}</div>
@@ -122,9 +122,10 @@ const efficiencyStyle = {
 };
 
 const scheduleHeaderStyle = {
-  display: 'flex',
-  gap: '15px',
-  marginBottom: '20px'
+  display: 'grid',
+  gridTemplateColumns: '1fr 1fr',
+  gap: '20px',
+  marginBottom: '25px'
 };
 
 const tableStyle = {

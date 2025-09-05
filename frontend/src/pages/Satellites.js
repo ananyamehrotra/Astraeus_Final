@@ -11,11 +11,11 @@ const Satellites = () => {
   return (
     <div>
       <h1>🛰️ Satellite Tracking</h1>
-      
+
       <div className="card">
         <h2>Live Satellite Status</h2>
         <p>Real-time tracking of satellites using NASA TLE data</p>
-        
+
         <div style={tableStyle}>
           <div style={headerStyle}>
             <div>Satellite</div>
@@ -23,7 +23,7 @@ const Satellites = () => {
             <div>Status</div>
             <div>Actions</div>
           </div>
-          
+
           {satellites.map(sat => (
             <div key={sat.id} style={rowStyle}>
               <div>
@@ -36,7 +36,7 @@ const Satellites = () => {
                 <span style={statusBadgeStyle}>{sat.status}</span>
               </div>
               <div>
-                <button className="btn" style={smallBtnStyle}>📍 Track</button>
+                <button className="btn" style={smallBtnStyle}>Track</button>
               </div>
             </div>
           ))}
@@ -47,17 +47,17 @@ const Satellites = () => {
         <h2>Ground Stations</h2>
         <div style={stationsStyle}>
           <div style={stationStyle}>
-            <h3>🏢 ISRO Bangalore</h3>
+            <h3>ISRO Bangalore</h3>
             <p>Lat: 12.97°N, Lon: 77.59°E</p>
             <span style={statusBadgeStyle}>Online</span>
           </div>
           <div style={stationStyle}>
-            <h3>🏢 ISRO Sriharikota</h3>
+            <h3>ISRO Sriharikota</h3>
             <p>Lat: 13.72°N, Lon: 80.23°E</p>
             <span style={statusBadgeStyle}>Online</span>
           </div>
           <div style={stationStyle}>
-            <h3>🏢 NASA Houston</h3>
+            <h3>NASA Houston</h3>
             <p>Lat: 29.76°N, Lon: -95.37°W</p>
             <span style={statusBadgeStyle}>Online</span>
           </div>
@@ -94,11 +94,12 @@ const rowStyle = {
 };
 
 const statusBadgeStyle = {
-  background: '#4CAF50',
+  background: 'linear-gradient(45deg, #4CAF50 0%, #2E7D32 100%)',
   color: 'white',
   padding: '4px 8px',
   borderRadius: '4px',
-  fontSize: '12px'
+  fontSize: '14px',
+  border: 'none'
 };
 
 const smallBtnStyle = {
