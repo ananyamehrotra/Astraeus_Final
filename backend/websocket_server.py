@@ -21,6 +21,7 @@ from datetime import datetime, timedelta
 import json
 from typing import Dict, List, Set
 import logging
+from flask import request
 
 # Import our backend modules
 from satellite_tracker import SatelliteTracker, SAMPLE_TLE_DATA, SAMPLE_GROUND_STATIONS
@@ -334,7 +335,6 @@ if __name__ == '__main__':
     print("--------------------------------------------------")
     
     # Import request for event handlers
-    from flask import request
     
     try:
         websocket_server.run(host='0.0.0.0', port=5001, debug=True)
