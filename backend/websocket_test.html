@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Entanglement - WebSocket Test</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0f0f23 0%, #1a1a3e 100%);
+            color: #ffffff;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .status {
+            padding: 15px;
+            border-radius: 10px;
+            margin: 10px 0;
+        }
+        .connected { background-color: #2d5a27; }
+        .disconnected { background-color: #5a2727; }
+        .data-section {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .satellite-item {
+            background: rgba(0, 255, 100, 0.1);
+            border-left: 4px solid #00ff64;
+            padding: 10px;
+            margin: 5px 0;
+        }
+        .window-item {
+            background: rgba(255, 100, 0, 0.1);
+            border-left: 4px solid #ff6400;
+            padding: 10px;
+            margin: 5px 0;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #45a049; }
+        button:disabled { background: #666; cursor: not-allowed; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🛰️ Project Entanglement - WebSocket Test</h1>
+            <p>Real-time Satellite Tracking System</p>
+        </div>
+
+        <div id="connectionStatus" class="status disconnected">
+            📡 Status: Disconnected
+        </div>
+
+        <div class="controls">
+            <button id="connectBtn" onclick="connect()">Connect to Server</button>
+            <button id="disconnectBtn" onclick="disconnect()" disabled>Disconnect</button>
+            <button id="subscribeSatBtn" onclick="subscribeSatellites()" disabled>Subscribe to Satellites</button>
+            <button id="subscribeWinBtn" onclick="subscribeWindows()" disabled>Subscribe to Windows</button>
+        </div>
+
+        <div class="data-section">
+            <h3>🛰️ Live Satellite Positions</h3>
+            <div id="satelliteData">No data yet...</div>
+        </div>
+
+        <div class="data-section">
+            <h3>📡 Communication Windows</h3>
+            <div id="windowData">No data yet...</div>
+        </div>
+
+        <div class="data-section">
+            <h3>📊 System Metrics</h3>
+            <div id="metricsData">No data yet...</div>
+        </div>
+
+        <div class="data-section">
+            <h3>📝 Event Log</h3>
+            <div id="eventLog"></div>
+        </div>
+    </div>
+
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script>
+        let socket = null;
+
+        function log(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            const logDiv = document.getElementById('eventLog');
+            logDiv.innerHTML = `<div>[${timestamp}] ${message}</div>` + logDiv.innerHTML;
+        }
+
+        function updateStatus(isConnected) {
+            const statusDiv = document.getElementById('connectionStatus');
+            const connectBtn = document.getElementById('connectBtn');
+            const disconnectBtn = document.getElementById('disconnectBtn');
+            const subscribeSatBtn = document.getElementById('subscribeSatBtn');
+            const subscribeWinBtn = document.getElementById('subscribeWinBtn');
+
+            if (isConnected) {
+                statusDiv.className = 'status connected';
+                statusDiv.textContent = '✅ Status: Connected to WebSocket Server';
+                connectBtn.disabled = true;
+                disconnectBtn.disabled = false;
+                subscribeSatBtn.disabled = false;
+                subscribeWinBtn.disabled = false;
+            } else {
+                statusDiv.className = 'status disconnected';
+                statusDiv.textContent = '❌ Status: Disconnected';
+                connectBtn.disabled = false;
+                disconnectBtn.disabled = true;
+                subscribeSatBtn.disabled = true;
+                subscribeWinBtn.disabled = true;
+            }
+        }
+
+        function connect() {
+            socket = io('http://localhost:5001');
+
+            socket.on('connect', function() {
+                log('🔗 Connected to WebSocket server');
+                updateStatus(true);
+            });
+
+            socket.on('disconnect', function() {
+                log('❌ Disconnected from server');
+                updateStatus(false);
+            });
+
+            socket.on('server_status', function(data) {
+                log('📊 Server status received: ' + data.message);
+            });
+
+            socket.on('satellite_update', function(data) {
+                log(`🛰️ Received ${data.satellites.length} satellite positions`);
+                
+                let html = '';
+                data.satellites.forEach(sat => {
+                    const pos = sat.position;
+                    html += `<div class="satellite-item">
+                        <strong>${sat.name}</strong><br>
+                        📍 ${pos.latitude.toFixed(3)}°N, ${pos.longitude.toFixed(3)}°E<br>
+                        🚀 Altitude: ${pos.altitude_km.toFixed(1)} km<br>
+                        ⏰ ${new Date(sat.timestamp).toLocaleTimeString()}
+                    </div>`;
+                });
+                document.getElementById('satelliteData').innerHTML = html;
+            });
+
+            socket.on('window_update', function(data) {
+                log(`📡 Received ${data.windows.length} communication windows`);
+                
+                let html = '';
+                data.windows.forEach(window => {
+                    html += `<div class="window-item">
+                        <strong>${window.satellite} → ${window.ground_station}</strong><br>
+                        ⏱️ Duration: ${window.duration_minutes.toFixed(1)} minutes<br>
+                        📐 Max Elevation: ${window.max_elevation}°<br>
+                        ⭐ Quality Score: ${window.quality_score}
+                    </div>`;
+                });
+                document.getElementById('windowData').innerHTML = html;
+            });
+
+            socket.on('system_metrics', function(data) {
+                const html = `
+                    <div>👥 Connected Clients: ${data.connected_clients}</div>
+                    <div>🛰️ Satellite Subscribers: ${data.satellite_subscribers}</div>
+                    <div>📡 Window Subscribers: ${data.window_subscribers}</div>
+                    <div>⏰ Last Update: ${new Date(data.timestamp).toLocaleTimeString()}</div>
+                `;
+                document.getElementById('metricsData').innerHTML = html;
+            });
+
+            socket.on('error', function(data) {
+                log('❌ Error: ' + data.message);
+            });
+        }
+
+        function disconnect() {
+            if (socket) {
+                socket.disconnect();
+                socket = null;
+                updateStatus(false);
+                log('👋 Disconnected by user');
+            }
+        }
+
+        function subscribeSatellites() {
+            if (socket) {
+                socket.emit('subscribe_satellites', {});
+                log('🛰️ Subscribed to satellite position updates');
+            }
+        }
+
+        function subscribeWindows() {
+            if (socket) {
+                socket.emit('subscribe_windows', {});
+                log('📡 Subscribed to communication window updates');
+            }
+        }
+
+        // Initialize
+        updateStatus(false);
+    </script>
+</body>
+</html>
