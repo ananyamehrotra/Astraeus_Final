@@ -1,0 +1,25 @@
+import React from 'react';
+import { Routes, Route } from 'react-router-dom';
+import Navigation from './components/Navigation';
+import Dashboard from './pages/Dashboard';
+import Satellites from './pages/Satellites';
+import Schedule from './pages/Schedule';
+import Analytics from './pages/Analytics';
+
+function App() {
+  return (
+    <div className="App">
+      <Navigation />
+      <div className="container">
+        <Routes>
+          <Route path="/" element={<Dashboard />} />
+          <Route path="/satellites" element={<Satellites />} />
+          <Route path="/schedule" element={<Schedule />} />
+          <Route path="/analytics" element={<Analytics />} />
+        </Routes>
+      </div>
+    </div>
+  );
+}
+
+export default App;
