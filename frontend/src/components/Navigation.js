@@ -5,10 +5,10 @@ const Navigation = () => {
   const location = useLocation();
 
   const navItems = [
-    { path: '/', label: 'Dashboard', icon: '🏠' },
-    { path: '/satellites', label: 'Satellites', icon: '🛰️' },
-    { path: '/schedule', label: 'Schedule', icon: '📅' },
-    { path: '/analytics', label: 'Analytics', icon: '📊' }
+    { path: '/', label: 'Dashboard' },
+    { path: '/satellites', label: 'Satellites' },
+    { path: '/schedule', label: 'Schedule' },
+    { path: '/analytics', label: 'Analytics' }
   ];
 
   return (
@@ -25,9 +25,7 @@ const Navigation = () => {
             style={{
               ...linkStyle,
               ...(location.pathname === item.path ? activeLinkStyle : {})
-            }}
-          >
-            <span style={iconStyle}>{item.icon}</span>
+            }}>
             {item.label}
           </Link>
         ))}
