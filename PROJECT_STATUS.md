@@ -3,13 +3,25 @@
 ## 🎯 What We're Building
 **AI-powered satellite communication scheduler for ISRO** - solving the "traffic jam in the sky" problem where thousands of satellites compete for limited ground station time slots.
 
-## ✅ What's COMPLETED (Sub-Phase 1.1)
+## ✅ What's COMPLETED (Sub-Phase 1.1 + 1.3)
 
 ### Core Engine Built
 - **Satellite Tracker**: Predicts any satellite's position in real-time
 - **Communication Calculator**: Finds optimal 10-15 minute communication windows
 - **Orbital Simulator**: Runs full constellation simulations
 - **Live Data**: Automatically fetches current satellite data from NASA/NORAD
+
+### API Infrastructure Complete
+- **REST API Server** (Port 5000): Complete API endpoints for all functionality
+- **WebSocket Server** (Port 5001): Real-time satellite position streaming
+- **Clean Architecture**: Proper separation of concerns between servers
+- **Test Interface**: Interactive WebSocket testing at `/websocket-test`
+
+### Real-time Features
+- **Live Satellite Tracking**: Stream positions every 10 seconds
+- **Communication Windows**: Real-time window detection and scoring
+- **Client Management**: Multi-client WebSocket subscription system
+- **System Metrics**: Live server performance monitoring
 
 ### Proven Results
 ```
@@ -20,60 +32,119 @@
 ```
 
 ### What You Can Do RIGHT NOW
-1. **Track any satellite** - Input TLE data, get live position
-2. **Find communication windows** - When satellites pass over ground stations
-3. **Run simulations** - Test different scenarios and configurations
-4. **Verify calculations** - Cross-check with real satellite positions
+1. **Track any satellite** - Input TLE data, get live position via API
+2. **Find communication windows** - REST API returns optimal windows
+3. **Run simulations** - POST to `/api/simulation/run` for full analysis
+4. **Real-time streaming** - Connect to WebSocket for live updates
+5. **Test everything** - Use `/websocket-test` interface for interactive testing
 
 ## 🚧 What's IN PROGRESS
 
-### Next: 3D Visualization (Sub-Phase 1.2)
-- Interactive 3D Earth globe
-- Real-time satellite animations
-- Mission control dashboard
-- Visual communication links
+### Current: Frontend Foundation (Sub-Phase 1.2)
+- Interactive 3D Earth globe with CesiumJS
+- React-based dashboard connecting to our APIs
+- Real-time satellite animations via WebSocket
+- Mission control interface design
 
-### Then: AI Optimization (Phase 2)
+### Next: AI Optimization (Phase 2)
 - Deep Reinforcement Learning scheduler
-- 15-25% efficiency improvement
-- Smart conflict resolution
-- Performance comparison tools
+- 15-25% efficiency improvement over current algorithms
+- Smart conflict resolution between competing satellites
+- Performance comparison and optimization tools
 
-## 🔧 Technology Stack & Roles
+## 🔧 Technology Stack & Architecture
 
-### Backend Engine (Python)
-- **Skyfield**: NASA-grade orbital mechanics calculations
-- **NumPy**: High-performance mathematical operations
-- **Requests**: Live TLE data fetching from Celestrak/NORAD
-- **Pandas**: Data processing and analysis
+### Backend Infrastructure (✅ COMPLETE)
+- **REST API Server** (`api_server.py` - Port 5000)
+  - Complete RESTful endpoints for all satellite operations
+  - Satellite position tracking and trajectory calculation
+  - Communication window detection and optimization
+  - Ground station management and visibility calculations
+  - Comprehensive simulation engine with JSON responses
 
-### Algorithm Components
-1. **Satellite Tracker** (`satellite_tracker.py`)
-   - Converts TLE data to real-time positions
-   - Calculates elevation angles from ground stations
-   - Handles timezone-aware UTC calculations
+- **WebSocket Server** (`websocket_server.py` - Port 5001)  
+  - Real-time satellite position streaming (10-second intervals)
+  - Live communication window detection
+  - Multi-client subscription management
+  - System metrics and performance monitoring
 
-2. **Window Detector** (`communication_windows.py`) 
-   - Scans for elevation >10° (minimum for communication)
-   - Scores windows by duration × elevation quality
-   - Filters high-quality opportunities (>5 min duration)
+- **Core Engine Libraries**
+  - **Skyfield**: NASA-grade orbital mechanics calculations
+  - **NumPy**: High-performance mathematical operations  
+  - **Flask**: REST API and WebSocket server framework
+  - **Flask-SocketIO**: Real-time bidirectional communication
 
-3. **Orbital Simulator** (`orbital_simulator.py`)
-   - Integrates all components into simulation engine
-   - Runs multi-satellite, multi-station scenarios
-   - Calculates network efficiency metrics
+### API Architecture (✅ PRODUCTION READY)
+```
+Port 5000 (API Server):
+├── GET  /                           # API documentation
+├── GET  /websocket-test             # Interactive test interface
+├── GET  /api/satellites             # List all tracked satellites
+├── POST /api/satellites             # Add satellite from TLE data
+├── GET  /api/satellites/{name}/position    # Current satellite position
+├── GET  /api/satellites/{name}/trajectory  # Satellite trajectory over time
+├── GET  /api/ground-stations        # List all ground stations
+├── POST /api/ground-stations        # Add new ground station
+├── GET  /api/communication-windows  # Find optimal communication windows
+├── GET  /api/visibility             # Check satellite visibility
+├── POST /api/simulation/run         # Run complete simulation
+└── POST /api/satellites/live-data   # Fetch live TLE data
+
+Port 5001 (WebSocket Server):
+├── Real-time Events:
+├── ├── subscribe_satellites         # Get live position updates
+├── ├── subscribe_windows           # Get communication window updates  
+├── ├── get_satellite_info          # Request detailed satellite data
+├── └── request_simulation          # Run simulation via WebSocket
+└── Broadcast Events:
+    ├── satellite_update            # Live position data (every 10s)
+    ├── window_update              # Communication windows
+    ├── system_metrics             # Server performance stats
+    └── server_status              # Connection status updates
+```
 
 ### Future Tech Stack
 - **Frontend**: React + CesiumJS (3D Earth visualization)
 - **AI Engine**: TensorFlow/PyTorch (Deep Reinforcement Learning)
-- **API**: Flask/FastAPI (Real-time data serving)
+- **Production**: Docker containerization + cloud deployment
 
-## 📊 Technical Proof
+## 📊 How to Test & Use The System
 
-### Demo Command
+### REST API Testing
 ```bash
+# Start the API server
 cd backend
-python test_simulation.py
+python api_server.py
+
+# Test endpoints
+curl http://localhost:5000/api/satellites
+curl http://localhost:5000/api/communication-windows
+```
+
+### WebSocket Real-time Testing  
+```bash
+# Start WebSocket server (separate terminal)
+cd backend  
+python websocket_server.py
+
+# Open test interface
+# Navigate to: http://localhost:5000/websocket-test
+# Click "Connect to WebSocket" -> "Subscribe to Satellites"
+```
+
+### Full System Demo
+```bash
+# Terminal 1: API Server
+python backend/api_server.py
+
+# Terminal 2: WebSocket Server  
+python backend/websocket_server.py
+
+# Browser: http://localhost:5000/websocket-test
+# 1. Click "Connect to WebSocket"
+# 2. Click "Subscribe to Satellites" 
+# 3. Watch real-time satellite positions update every 10 seconds
+# 4. Click "Subscribe to Windows" for communication opportunities
 ```
 
 ### Sample Output
