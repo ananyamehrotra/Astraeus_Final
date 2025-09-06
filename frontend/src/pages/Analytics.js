@@ -3,23 +3,23 @@ import React from 'react';
 const Analytics = () => {
   return (
     <div>
-      <h1>📊 Performance Analytics</h1>
-      
+      <h1>Performance Analytics</h1>
+
       <div className="card">
         <h2>System Performance</h2>
         <div style={performanceStyle}>
           <div style={metricCardStyle}>
-            <h3>🎯 Current Efficiency</h3>
+            <h3> Current Efficiency</h3>
             <div style={bigNumberStyle}>1.06%</div>
             <p>Baseline algorithm performance</p>
           </div>
           <div style={metricCardStyle}>
-            <h3>🚀 Expected AI Improvement</h3>
+            <h3> Expected AI Improvement</h3>
             <div style={bigNumberStyle}>15-25%</div>
             <p>With GNN + Reinforcement Learning</p>
           </div>
           <div style={metricCardStyle}>
-            <h3>💰 Value Impact</h3>
+            <h3> Value Impact</h3>
             <div style={bigNumberStyle}>$50M+</div>
             <p>Annual satellite industry savings</p>
           </div>
@@ -62,25 +62,25 @@ const Analytics = () => {
           <div style={phaseStyle}>
             <h3>Phase 1: Digital Twin Foundation</h3>
             <div style={progressBarStyle}>
-              <div style={{...progressFillStyle, width: '100%'}}></div>
+              <div style={{ ...progressFillStyle, width: '100%' }}></div>
             </div>
-            <p>✅ Complete - Live satellite tracking operational</p>
+            <p>Complete - Live satellite tracking operational</p>
           </div>
-          
+
           <div style={phaseStyle}>
             <h3>Phase 2: Graph Neural Network</h3>
             <div style={progressBarStyle}>
-              <div style={{...progressFillStyle, width: '0%'}}></div>
+              <div style={{ ...progressFillStyle, width: '0%' }}></div>
             </div>
-            <p>📋 Planned - Network understanding implementation</p>
+            <p> Planned - Network understanding implementation</p>
           </div>
-          
+
           <div style={phaseStyle}>
             <h3>Phase 3: Reinforcement Learning</h3>
             <div style={progressBarStyle}>
-              <div style={{...progressFillStyle, width: '0%'}}></div>
+              <div style={{ ...progressFillStyle, width: '0%' }}></div>
             </div>
-            <p>📋 Planned - AI agent training pipeline</p>
+            <p> Planned - AI agent training pipeline</p>
           </div>
         </div>
       </div>
@@ -95,7 +95,7 @@ const Analytics = () => {
               <p>ISS tracked at 419km altitude with NASA-grade accuracy</p>
             </div>
           </div>
-          
+
           <div style={testResultStyle}>
             <span style={passStyle}>✅</span>
             <div>
@@ -103,7 +103,7 @@ const Analytics = () => {
               <p>8 windows found in 6-hour simulation with quality scoring</p>
             </div>
           </div>
-          
+
           <div style={testResultStyle}>
             <span style={passStyle}>✅</span>
             <div>
@@ -111,7 +111,7 @@ const Analytics = () => {
               <p>Real-time elevation calculations across 3 stations</p>
             </div>
           </div>
-          
+
           <div style={testResultStyle}>
             <span style={passStyle}>✅</span>
             <div>
