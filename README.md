@@ -67,6 +67,14 @@ An AI-powered Mission Control system that creates a **Digital Twin** of the sate
 - ✅ Live TLE data fetcher (`tle_fetcher.py`)
 - ✅ Testing suite (`test_simulation.py`)
 
+**External Resources & APIs Used:**
+- **Skyfield Library**: https://rhodesmill.org/skyfield/ - NASA JPL ephemeris data for orbital calculations
+- **Celestrak TLE Data**: https://celestrak.org/NORAD/elements/ - Live satellite orbital elements
+- **Space-Track.org**: https://www.space-track.org/ - Official NORAD satellite catalog (requires free registration)
+- **NASA JPL Horizons**: https://ssd.jpl.nasa.gov/horizons/ - Planetary ephemeris data
+- **Python Libraries**: NumPy (arrays), Pandas (data processing), Requests (HTTP calls)
+- **TLE Format Specification**: https://en.wikipedia.org/wiki/Two-line_element_set - Orbital element format
+
 ---
 
 ### Sub-Phase 1.2: Frontend Foundation (Hours 5-8) ✅ COMPLETED
@@ -101,6 +109,15 @@ An AI-powered Mission Control system that creates a **Digital Twin** of the sate
 
 
 **Status:** COMPLETE - Ready for Sub-Phase 1.3
+
+**External Resources & APIs Used:**
+- **React**: https://reactjs.org/ - Frontend framework for building user interfaces
+- **React Router**: https://reactrouter.com/ - Client-side routing for single-page applications
+- **Create React App**: https://create-react-app.dev/ - React application scaffolding tool
+- **CSS Grid & Flexbox**: https://developer.mozilla.org/en-US/docs/Web/CSS - Modern layout techniques
+- **Web APIs**: Fetch API, WebSocket API for real-time communication
+- **Browser Compatibility**: Modern browsers supporting ES6+ features
+- **NPM Registry**: https://www.npmjs.com/ - Package manager for JavaScript dependencies
 
 ---
 
@@ -149,6 +166,15 @@ An AI-powered Mission Control system that creates a **Digital Twin** of the sate
 
 **Status:** ✅ BACKEND COMPLETE - Ready for Frontend Development
 
+**External Resources & APIs Used:**
+- **Flask**: https://flask.palletsprojects.com/ - Python web framework for REST API
+- **Flask-SocketIO**: https://flask-socketio.readthedocs.io/ - WebSocket support for real-time communication
+- **CORS**: https://flask-cors.readthedocs.io/ - Cross-Origin Resource Sharing for frontend-backend connection
+- **JSON API Standards**: https://jsonapi.org/ - API response format specification
+- **WebSocket Protocol**: https://tools.ietf.org/html/rfc6455 - Real-time bidirectional communication
+- **HTTP Status Codes**: https://httpstatuses.com/ - Standard response codes for REST API
+- **API Testing Tools**: Postman, curl, browser developer tools
+
 ---
 
 ## Phase 2: Digital Twin Enhancement & Graph Neural Network (Hours 13-24)
@@ -182,6 +208,15 @@ An AI-powered Mission Control system that creates a **Digital Twin** of the sate
 
 **What's Left:** GNN architecture implementation, RL agent integration
 
+**External Resources & APIs Used:**
+- **PyTorch Geometric**: https://pytorch-geometric.readthedocs.io/ - Graph neural network library
+- **NetworkX**: https://networkx.org/ - Graph data structure and algorithms
+- **SciPy**: https://scipy.org/ - Scientific computing for orbital perturbations
+- **Atmospheric Models**: NRLMSISE-00 for atmospheric density calculations
+- **Solar Radiation Pressure**: JPL models for satellite perturbations
+- **Weather APIs**: OpenWeatherMap API for ground station conditions
+- **Mission Priority Standards**: CCSDS standards for space communications
+
 ---
 
 ### Sub-Phase 2.2: Graph Neural Network Architecture (Hours 17-20)
@@ -213,6 +248,15 @@ An AI-powered Mission Control system that creates a **Digital Twin** of the sate
 
 **What's Left:** RL agent integration, training pipeline, performance optimization
 
+**External Resources & APIs Used:**
+- **PyTorch Geometric**: https://pytorch-geometric.readthedocs.io/ - Graph neural network framework
+- **Graph Attention Networks**: https://arxiv.org/abs/1710.10903 - GAT research paper
+- **Node2Vec**: https://snap.stanford.edu/node2vec/ - Node embedding techniques
+- **DGL (Deep Graph Library)**: https://www.dgl.ai/ - Alternative graph learning framework
+- **CUDA**: https://developer.nvidia.com/cuda-zone - GPU acceleration for training
+- **TensorBoard**: https://www.tensorflow.org/tensorboard - Training visualization
+- **Graph Datasets**: Stanford SNAP datasets for testing
+
 ---
 
 ### Sub-Phase 2.3: Reinforcement Learning Agent Integration (Hours 21-24)
@@ -243,6 +287,15 @@ An AI-powered Mission Control system that creates a **Digital Twin** of the sate
 - Observe emergent scheduling strategies
 
 **What's Left:** Intensive training, performance validation, deployment
+
+**External Resources & APIs Used:**
+- **Stable-Baselines3**: https://stable-baselines3.readthedocs.io/ - Reinforcement learning algorithms
+- **Google Colab Pro**: https://colab.research.google.com/ - Free GPU training platform
+- **OpenAI Gym**: https://gym.openai.com/ - RL environment framework
+- **Ray RLlib**: https://docs.ray.io/en/latest/rllib/ - Distributed RL training
+- **Weights & Biases**: https://wandb.ai/ - Experiment tracking and visualization
+- **Hyperopt**: https://hyperopt.github.io/hyperopt/ - Hyperparameter optimization
+- **Multi-objective Optimization**: NSGA-II algorithm for balancing objectives
 
 ---
 
@@ -277,6 +330,15 @@ An AI-powered Mission Control system that creates a **Digital Twin** of the sate
 
 **What's Left:** AI training completion, performance demonstrations
 
+**External Resources & APIs Used:**
+- **Axios**: https://axios-http.com/ - HTTP client for API requests from React
+- **WebSocket API**: https://developer.mozilla.org/en-US/docs/Web/API/WebSocket - Browser WebSocket implementation
+- **React Hooks**: https://reactjs.org/docs/hooks-intro.html - State management in functional components
+- **CORS Configuration**: Cross-origin resource sharing setup
+- **JSON Data Format**: https://www.json.org/ - Data exchange format between frontend and backend
+- **Browser DevTools**: Network tab for debugging API calls
+- **Real-time Data Protocols**: WebSocket for live satellite position updates
+
 ---
 
 ## Phase 4: AI Training & Mission Control Interface (Hours 29-40)
@@ -310,6 +372,15 @@ An AI-powered Mission Control system that creates a **Digital Twin** of the sate
 
 **What's Left:** Mission control interface, visual demonstrations, final integration
 
+**External Resources & APIs Used:**
+- **Google Colab Pro**: https://colab.research.google.com/ - Free GPU training platform
+- **TensorBoard**: https://www.tensorflow.org/tensorboard - Training visualization and monitoring
+- **Jupyter Notebooks**: https://jupyter.org/ - Interactive development environment
+- **CUDA Toolkit**: https://developer.nvidia.com/cuda-toolkit - GPU acceleration framework
+- **PyTorch**: https://pytorch.org/ - Deep learning framework
+- **Matplotlib**: https://matplotlib.org/ - Plotting library for training curves
+- **Scikit-learn**: https://scikit-learn.org/ - Machine learning metrics and validation
+
 ---
 
 ### Sub-Phase 4.2: Mission Control Interface & Visual Demonstrations (Hours 33-36)
@@ -340,6 +411,15 @@ An AI-powered Mission Control system that creates a **Digital Twin** of the sate
 - See immediate proof of AI's superior performance
 
 **What's Left:** Final polish, presentation materials, deployment
+
+**External Resources & APIs Used:**
+- **CesiumJS**: https://cesium.com/platform/cesiumjs/ - 3D globe and geospatial visualization
+- **D3.js**: https://d3js.org/ - Data visualization for network graphs
+- **Chart.js**: https://www.chartjs.org/ - Interactive charts for performance metrics
+- **WebGL**: https://www.khronos.org/webgl/ - Hardware-accelerated 3D graphics
+- **Three.js**: https://threejs.org/ - Alternative 3D graphics library
+- **React Spring**: https://react-spring.io/ - Animation library for smooth transitions
+- **Plotly.js**: https://plotly.com/javascript/ - Advanced interactive plotting
 
 ---
 
@@ -376,6 +456,15 @@ An AI-powered Mission Control system that creates a **Digital Twin** of the sate
 - Side-by-side performance demonstrations
 - Professional mission control interface
 - Proven 15-25% efficiency improvements over classical methods
+
+**External Resources & APIs Used:**
+- **Jest**: https://jestjs.io/ - JavaScript testing framework
+- **Cypress**: https://www.cypress.io/ - End-to-end testing framework
+- **ESLint**: https://eslint.org/ - Code quality and style checking
+- **Prettier**: https://prettier.io/ - Code formatting tool
+- **Docker**: https://www.docker.com/ - Containerization for deployment
+- **GitHub Actions**: https://github.com/features/actions - CI/CD pipeline
+- **Heroku**: https://www.heroku.com/ - Cloud deployment platform
 
 ---
 
@@ -448,6 +537,15 @@ An AI-powered Mission Control system that creates a **Digital Twin** of the sate
 
 **What's Left:** GNN implementation, network graph processing
 
+**External Resources & APIs Used:**
+- **PyTorch Geometric**: https://pytorch-geometric.readthedocs.io/ - Graph neural network library
+- **NetworkX**: https://networkx.org/ - Graph data structure and algorithms
+- **SciPy**: https://scipy.org/ - Scientific computing for orbital perturbations
+- **Atmospheric Models**: NRLMSISE-00 for atmospheric density calculations
+- **Solar Radiation Pressure**: JPL models for satellite perturbations
+- **Weather APIs**: OpenWeatherMap API for ground station conditions
+- **Mission Priority Standards**: CCSDS standards for space communications
+
 ---
 
 ### Sub-Phase 5.2: Graph Neural Network Implementation (Hours 45-48)
@@ -479,6 +577,15 @@ An AI-powered Mission Control system that creates a **Digital Twin** of the sate
 
 **What's Left:** RL agent integration, training pipeline setup
 
+**External Resources & APIs Used:**
+- **PyTorch Geometric**: https://pytorch-geometric.readthedocs.io/ - Graph neural network framework
+- **Graph Attention Networks**: https://arxiv.org/abs/1710.10903 - GAT research paper
+- **Node2Vec**: https://snap.stanford.edu/node2vec/ - Node embedding techniques
+- **DGL (Deep Graph Library)**: https://www.dgl.ai/ - Alternative graph learning framework
+- **CUDA**: https://developer.nvidia.com/cuda-zone - GPU acceleration for training
+- **TensorBoard**: https://www.tensorflow.org/tensorboard - Training visualization
+- **Graph Datasets**: Stanford SNAP datasets for testing
+
 ---
 
 ### Sub-Phase 5.3: Reinforcement Learning Agent Training (Hours 49-52)
@@ -509,6 +616,15 @@ An AI-powered Mission Control system that creates a **Digital Twin** of the sate
 - Observe emergent behaviors in complex network scenarios
 
 **What's Left:** Mission control interface, performance validation
+
+**External Resources & APIs Used:**
+- **Stable-Baselines3**: https://stable-baselines3.readthedocs.io/ - Reinforcement learning algorithms
+- **Google Colab Pro**: https://colab.research.google.com/ - Free GPU training platform
+- **OpenAI Gym**: https://gym.openai.com/ - RL environment framework
+- **Ray RLlib**: https://docs.ray.io/en/latest/rllib/ - Distributed RL training
+- **Weights & Biases**: https://wandb.ai/ - Experiment tracking and visualization
+- **Hyperopt**: https://hyperopt.github.io/hyperopt/ - Hyperparameter optimization
+- **Multi-objective Optimization**: NSGA-II algorithm for balancing objectives
 
 ---
 
@@ -542,6 +658,15 @@ An AI-powered Mission Control system that creates a **Digital Twin** of the sate
 - Override AI decisions and observe network impact
 
 **What's Left:** Performance comparison tools, final validation
+
+**External Resources & APIs Used:**
+- **CesiumJS**: https://cesium.com/platform/cesiumjs/ - 3D globe and geospatial visualization
+- **WebGL**: https://www.khronos.org/webgl/ - Hardware-accelerated 3D graphics
+- **Three.js**: https://threejs.org/ - Alternative 3D graphics library
+- **Satellite.js**: https://github.com/shashwatak/satellite-js - JavaScript orbital calculations
+- **Turf.js**: https://turfjs.org/ - Geospatial analysis in JavaScript
+- **D3.js**: https://d3js.org/ - Data visualization for network graphs
+- **WebGL Earth**: http://www.webglearth.org/ - Alternative 3D Earth visualization
 
 ---
 
