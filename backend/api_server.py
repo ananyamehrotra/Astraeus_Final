@@ -13,6 +13,7 @@ from datetime import datetime, timedelta
 import json
 from typing import Dict, List, Optional
 import traceback
+import requests
 
 # Import our backend modules
 from satellite_tracker import SatelliteTracker, SAMPLE_TLE_DATA, SAMPLE_GROUND_STATIONS
@@ -332,15 +333,24 @@ def websocket_test():
 
 @app.route('/api/satellites', methods=['GET'])
 def get_satellites():
-    """Get list of all tracked satellites"""
+    """Get list of all tracked satellites with current positions"""
     try:
         satellites = []
+        current_time = datetime.utcnow()
+        
         for name, satellite in simulator.tracker.satellites.items():
-            satellites.append({
-                'name': name,
-                'catalog_number': getattr(satellite, 'model', {}).get('satnum', 'N/A'),
-                'added_time': datetime.now().isoformat()
-            })
+            try:
+                # Get current position
+                position = simulator.tracker.get_satellite_position(name, current_time)
+                satellites.append({
+                    'name': name,
+                    'latitude': position['latitude'],
+                    'longitude': position['longitude'],
+                    'altitude': position['altitude_km'],
+                    'timestamp': current_time.isoformat()
+                })
+            except Exception as e:
+                print(f"Error getting position for {name}: {e}")
         
         return jsonify({
             'satellites': satellites,
@@ -653,6 +663,26 @@ def run_simulation():
     except Exception as e:
         return jsonify({'error': str(e), 'status': 'error'}), 500
 
+# ==================== NASA API PROXY ENDPOINTS ====================
+
+@app.route('/api/nasa/iss-position', methods=['GET'])
+def get_iss_position():
+    """Proxy endpoint for NASA ISS position API"""
+    try:
+        response = requests.get('http://api.open-notify.org/iss-now.json', timeout=10)
+        return jsonify(response.json())
+    except Exception as e:
+        return jsonify({'error': str(e), 'status': 'error'}), 500
+
+@app.route('/api/nasa/astronauts', methods=['GET'])
+def get_astronauts():
+    """Proxy endpoint for NASA astronauts API"""
+    try:
+        response = requests.get('http://api.open-notify.org/astros.json', timeout=10)
+        return jsonify(response.json())
+    except Exception as e:
+        return jsonify({'error': str(e), 'status': 'error'}), 500
+
 # ==================== LIVE DATA ENDPOINTS ====================
 
 @app.route('/api/satellites/live-data', methods=['POST'])
@@ -701,13 +731,13 @@ def internal_error(error):
 # ==================== DEVELOPMENT SERVER ====================
 
 if __name__ == '__main__':
-    print("🛰️  Project Entanglement API Server Starting...")
-    print("📡 AI-Powered Satellite Communication Scheduler")
-    print("🌍 ISRO SIH 2025 Problem Statement #25142")
+    print("Project Entanglement API Server Starting...")
+    print("AI-Powered Satellite Communication Scheduler")
+    print("ISRO SIH 2025 Problem Statement #25142")
     print("-" * 50)
-    print("✅ Backend Foundation: COMPLETE")
-    print("🚧 API Layer: Starting...")
-    print("📊 Available endpoints:")
+    print("Backend Foundation: COMPLETE")
+    print("API Layer: Starting...")
+    print("Available endpoints:")
     print("   • GET  /api/satellites")
     print("   • POST /api/satellites")
     print("   • GET  /api/satellites/{name}/position")
@@ -719,7 +749,7 @@ if __name__ == '__main__':
     print("   • POST /api/simulation/run")
     print("   • POST /api/satellites/live-data")
     print("-" * 50)
-    print("🌐 Server starting on http://localhost:5000")
-    print("📖 API Documentation: http://localhost:5000")
+    print("Server starting on http://localhost:5000")
+    print("API Documentation: http://localhost:5000")
     
     app.run(debug=True, host='0.0.0.0', port=5000)

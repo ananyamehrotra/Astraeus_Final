@@ -1,0 +1,16 @@
+/* Cesium CSS overrides for better integration */
+.cesium-viewer {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.cesium-viewer-cesiumWidgetContainer {
+  background: #0a0a0a;
+}
+
+.cesium-credit-logoContainer {
+  display: none !important;
+}
+
+.cesium-widget-credits {
+  display: none !important;
+}

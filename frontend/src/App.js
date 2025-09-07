@@ -5,6 +5,7 @@ import Dashboard from './pages/Dashboard';
 import Satellites from './pages/Satellites';
 import Schedule from './pages/Schedule';
 import Analytics from './pages/Analytics';
+import Globe from './pages/Globe';
 
 function App() {
   return (
@@ -16,6 +17,7 @@ function App() {
           <Route path="/satellites" element={<Satellites />} />
           <Route path="/schedule" element={<Schedule />} />
           <Route path="/analytics" element={<Analytics />} />
+          <Route path="/globe" element={<Globe />} />
         </Routes>
       </div>
     </div>
