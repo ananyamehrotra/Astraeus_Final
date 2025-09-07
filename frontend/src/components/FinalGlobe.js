@@ -40,8 +40,26 @@ const FinalGlobe = () => {
           navigationHelpButton: true,
           fullscreenButton: true,
           animation: true,
-          timeline: true
+          timeline: true,
+          creditContainer: document.createElement('div')
         });
+        
+        // Move credits to top right
+        setTimeout(() => {
+          const creditContainer = viewer.creditContainer;
+          if (creditContainer) {
+            creditContainer.style.position = 'absolute';
+            creditContainer.style.top = '10px';
+            creditContainer.style.right = '10px';
+            creditContainer.style.bottom = 'auto';
+            creditContainer.style.left = 'auto';
+            creditContainer.style.fontSize = '10px';
+            creditContainer.style.background = 'rgba(0, 0, 0, 0.5)';
+            creditContainer.style.padding = '5px';
+            creditContainer.style.borderRadius = '5px';
+            creditContainer.style.zIndex = '1000';
+          }
+        }, 1000);
         
         // Style CesiumJS controls with cyberpunk theme
         setTimeout(() => {
@@ -122,25 +140,42 @@ const FinalGlobe = () => {
           destination: window.Cesium.Cartesian3.fromDegrees(77.5946, 12.9716, 8000000)
         });
         
-        // Add live altitude display
-        const toolbar = document.createElement('div');
-        toolbar.style.position = 'absolute';
-        toolbar.style.bottom = '10px';
-        toolbar.style.right = '10px';
-        toolbar.style.background = 'rgba(0, 0, 0, 0.8)';
-        toolbar.style.color = 'white';
-        toolbar.style.padding = '10px';
-        toolbar.style.borderRadius = '5px';
-        toolbar.style.fontSize = '12px';
-        toolbar.style.zIndex = '1000';
-        toolbar.id = 'altitude-display';
-        cesiumContainer.current.appendChild(toolbar);
+        // Remove any existing scale displays first
+        const existingScales = document.querySelectorAll('[id="scale-display"]');
+        existingScales.forEach(scale => scale.remove());
         
-        // Update altitude display on camera move
+        // Add live scale display
+        const scaleDisplay = document.createElement('div');
+        scaleDisplay.style.position = 'absolute';
+        scaleDisplay.style.bottom = '120px';
+        scaleDisplay.style.left = '20px';
+        scaleDisplay.style.background = 'linear-gradient(135deg, rgba(0, 255, 255, 0.2), rgba(255, 0, 255, 0.2))';
+        scaleDisplay.style.color = '#00ffff';
+        scaleDisplay.style.padding = '15px';
+        scaleDisplay.style.borderRadius = '15px';
+        scaleDisplay.style.fontSize = '14px';
+        scaleDisplay.style.zIndex = '99999';
+        scaleDisplay.style.border = '2px solid #00ffff';
+        scaleDisplay.style.backdropFilter = 'blur(10px)';
+        scaleDisplay.style.fontFamily = 'Courier New, monospace';
+        scaleDisplay.style.boxShadow = '0 0 20px rgba(0, 255, 255, 0.4)';
+        scaleDisplay.id = 'scale-display';
+        cesiumContainer.current.appendChild(scaleDisplay);
+        
+        // Update scale display on camera move
         viewer.camera.changed.addEventListener(() => {
           const altitude = viewer.camera.positionCartographic.height;
           const altitudeKm = (altitude / 1000).toFixed(1);
-          toolbar.innerHTML = `📏 Altitude: ${altitudeKm} km`;
+          const scale = altitude > 10000000 ? 'Global' : 
+                      altitude > 1000000 ? 'Continental' :
+                      altitude > 100000 ? 'Regional' :
+                      altitude > 10000 ? 'City' : 'Local';
+          scaleDisplay.innerHTML = `
+            <div style="font-weight: bold; color: #ffff00; margin-bottom: 5px;">📏 SCALE INDICATOR</div>
+            <div>Altitude: ${altitudeKm} km</div>
+            <div>Scale: ${scale}</div>
+            <div>Zoom Level: ${Math.round(10 - Math.log10(altitude/1000))}</div>
+          `;
         });
 
         setStatus('SINGLE CesiumJS Active');
@@ -154,6 +189,12 @@ const FinalGlobe = () => {
     initCesium();
     
     return () => {
+      // Clean up scale display
+      const existingScale = document.getElementById('scale-display');
+      if (existingScale) {
+        existingScale.remove();
+      }
+      
       if (window.cesiumViewer) {
         window.cesiumViewer.destroy();
         window.cesiumViewer = null;
@@ -163,8 +204,8 @@ const FinalGlobe = () => {
 
   const fetchSatellites = async (viewer) => {
     try {
-      console.log('Fetching from backend...');
-      const response = await fetch('http://localhost:5000/api/satellites');
+      console.log('Fetching CZML data from backend...');
+      const response = await fetch('http://localhost:5000/api/satellites/czml?duration_hours=24&step_minutes=5');
       console.log('Response status:', response.status);
       
       if (!response.ok) {
@@ -172,11 +213,28 @@ const FinalGlobe = () => {
       }
       
       const data = await response.json();
-      console.log('Backend data:', data);
+      console.log('CZML data:', data);
       
-      if (data.satellites && data.satellites.length > 0) {
-        setSatellites(data.satellites);
-        setStatus(`✅ LIVE BACKEND DATA - ${data.satellites.length} satellites`);
+      if (data.czml && data.czml.length > 1) {
+        // Load CZML data for time-dynamic satellites
+        const czmlDataSource = await window.Cesium.CzmlDataSource.load(data.czml);
+        viewer.dataSources.add(czmlDataSource);
+        
+        // Set clock to match CZML timeline
+        const startTime = window.Cesium.JulianDate.fromIso8601(data.time_range.start + 'Z');
+        const endTime = window.Cesium.JulianDate.fromIso8601(data.time_range.end + 'Z');
+        
+        viewer.clock.startTime = startTime;
+        viewer.clock.stopTime = endTime;
+        viewer.clock.currentTime = startTime;
+        viewer.clock.clockRange = window.Cesium.ClockRange.LOOP_STOP;
+        viewer.clock.multiplier = 60; // 60x speed
+        
+        // Enable timeline
+        viewer.timeline.zoomTo(startTime, endTime);
+        
+        setSatellites(data.czml.slice(1).map(sat => ({ name: sat.name })));
+        setStatus(`✅ LIVE ORBITAL DATA - ${data.satellites_count} satellites with real trajectories`);
         
         // Show connection notification
         if (!isConnected) {
@@ -185,10 +243,7 @@ const FinalGlobe = () => {
           setTimeout(() => setShowNotification(false), 3000);
         }
         
-        // Clear any existing entities first
-        viewer.entities.removeAll();
-        
-        // Re-add ISRO marker
+        // Add ISRO marker (static)
         viewer.entities.add({
           position: window.Cesium.Cartesian3.fromDegrees(77.5946, 12.9716),
           point: {
@@ -206,40 +261,13 @@ const FinalGlobe = () => {
           }
         });
         
-        // Add real satellites from backend
-        console.log('Adding satellites to globe:', data.satellites);
-        data.satellites.forEach((sat, index) => {
-          console.log(`Adding satellite ${index + 1}:`, sat.name, 'at', sat.latitude, sat.longitude, sat.altitude);
-          viewer.entities.add({
-            id: `satellite-${index}`,
-            position: window.Cesium.Cartesian3.fromDegrees(sat.longitude, sat.latitude, sat.altitude * 1000),
-            point: {
-              pixelSize: 15,
-              color: index === 0 ? window.Cesium.Color.LIME : 
-                     index === 1 ? window.Cesium.Color.CYAN :
-                     index === 2 ? window.Cesium.Color.YELLOW :
-                     window.Cesium.Color.MAGENTA,
-              outlineColor: window.Cesium.Color.WHITE,
-              outlineWidth: 3,
-              heightReference: window.Cesium.HeightReference.NONE
-            },
-            label: {
-              text: `🛰️ ${sat.name}`,
-              font: '14pt Arial',
-              fillColor: window.Cesium.Color.WHITE,
-              style: window.Cesium.LabelStyle.FILL,
-              pixelOffset: new window.Cesium.Cartesian2(0, -40),
-              heightReference: window.Cesium.HeightReference.NONE
-            }
-          });
-        });
-        console.log(`Total satellites added: ${data.satellites.length}`);
+        console.log(`Total satellites with orbital trajectories: ${data.satellites_count}`);
         return;
       } else {
-        throw new Error('No satellites in response');
+        throw new Error('No CZML data in response');
       }
     } catch (error) {
-      console.error('Backend connection failed:', error);
+      console.error('CZML backend connection failed:', error);
       
       // Show disconnection notification
       if (isConnected) {

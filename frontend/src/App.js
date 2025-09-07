@@ -1,6 +1,7 @@
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import Navigation from './components/Navigation';
+import StarField from './components/StarField';
 import Dashboard from './pages/Dashboard';
 import Satellites from './pages/Satellites';
 import Schedule from './pages/Schedule';
@@ -10,6 +11,7 @@ import Globe from './pages/Globe';
 function App() {
   return (
     <div className="App">
+      <StarField />
       <Navigation />
       <div className="container">
         <Routes>

@@ -466,6 +466,118 @@ def get_satellite_trajectory(satellite_name):
     except Exception as e:
         return jsonify({'error': str(e), 'status': 'error'}), 500
 
+@app.route('/api/satellites/czml', methods=['GET'])
+def get_satellites_czml():
+    """Generate CZML for time-dynamic satellite visualization"""
+    try:
+        # Get query parameters
+        duration_hours = float(request.args.get('duration_hours', 24))
+        step_minutes = int(request.args.get('step_minutes', 5))
+        start_time_str = request.args.get('start_time')
+        
+        if start_time_str:
+            start_time = datetime.fromisoformat(start_time_str.replace('Z', '+00:00'))
+        else:
+            start_time = datetime.utcnow()
+        
+        end_time = start_time + timedelta(hours=duration_hours)
+        
+        # Create CZML document
+        czml = [{
+            "id": "document",
+            "name": "Project Astraeus - Real-time Satellites",
+            "version": "1.0",
+            "clock": {
+                "interval": f"{start_time.isoformat()}Z/{end_time.isoformat()}Z",
+                "currentTime": f"{start_time.isoformat()}Z",
+                "multiplier": 60,
+                "range": "LOOP_STOP",
+                "step": "SYSTEM_CLOCK_MULTIPLIER"
+            }
+        }]
+        
+        # Add each satellite
+        for name, satellite in simulator.tracker.satellites.items():
+            try:
+                # Generate position samples
+                position_samples = []
+                current_time = start_time
+                
+                while current_time <= end_time:
+                    try:
+                        pos = simulator.tracker.get_satellite_position(name, current_time)
+                        # CZML format: [time, x, y, z] in Cartesian coordinates
+                        position_samples.extend([
+                            current_time.isoformat() + "Z",
+                            pos['longitude'], pos['latitude'], pos['altitude_km'] * 1000
+                        ])
+                    except Exception as e:
+                        print(f"Error calculating position for {name} at {current_time}: {e}")
+                    
+                    current_time += timedelta(minutes=step_minutes)
+                
+                if position_samples:
+                    satellite_czml = {
+                        "id": f"satellite_{name}",
+                        "name": name,
+                        "availability": f"{start_time.isoformat()}Z/{end_time.isoformat()}Z",
+                        "position": {
+                            "interpolationAlgorithm": "LAGRANGE",
+                            "interpolationDegree": 5,
+                            "referenceFrame": "FIXED",
+                            "epoch": f"{start_time.isoformat()}Z",
+                            "cartographicDegrees": position_samples
+                        },
+                        "point": {
+                            "pixelSize": 15,
+                            "color": {
+                                "rgba": [255, 255, 0, 255] if name == "ISS" else 
+                                       [0, 255, 255, 255] if name == "HUBBLE" else
+                                       [255, 0, 255, 255] if "STARLINK" in name else
+                                       [0, 255, 0, 255]
+                            },
+                            "outlineColor": {"rgba": [255, 255, 255, 255]},
+                            "outlineWidth": 2
+                        },
+                        "label": {
+                            "text": f"🛰️ {name}",
+                            "font": "14pt Arial",
+                            "fillColor": {"rgba": [255, 255, 255, 255]},
+                            "pixelOffset": {"cartesian2": [0, -40]}
+                        },
+                        "path": {
+                            "material": {
+                                "polylineGlow": {
+                                    "color": {"rgba": [150, 200, 255, 255]},
+                                    "glowPower": 0.3,
+                                    "taperPower": 0.8
+                                }
+                            },
+                            "width": 4,
+                            "leadTime": 7200,
+                            "trailTime": 7200,
+                            "resolution": 120
+                        }
+                    }
+                    czml.append(satellite_czml)
+                    
+            except Exception as e:
+                print(f"Error generating CZML for {name}: {e}")
+        
+        return jsonify({
+            'czml': czml,
+            'satellites_count': len(czml) - 1,
+            'time_range': {
+                'start': start_time.isoformat(),
+                'end': end_time.isoformat(),
+                'duration_hours': duration_hours
+            },
+            'status': 'success'
+        })
+        
+    except Exception as e:
+        return jsonify({'error': str(e), 'status': 'error'}), 500
+
 # ==================== GROUND STATION MANAGEMENT ENDPOINTS ====================
 
 @app.route('/api/ground-stations', methods=['GET'])

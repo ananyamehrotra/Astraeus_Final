@@ -477,6 +477,8 @@ An AI-powered Mission Control system that creates a **Digital Twin** of the sate
 - **Multi-satellite display** with 4+ satellites in real-time 🟢
 - **All libraries integrated** - CesiumJS, D3.js, Satellite.js, Turf.js, Three.js 🟢
 - **Live backend connectivity** with vibrant notification system 🟢
+- **Real Orbital Mechanics** - TLE-based satellite trajectories with timeline control 🟢
+- **CZML Time-Dynamic Visualization** - Satellites move realistically with timeline 🟢
 
 ### 🎯 Expected GNN+RL Impact (Phases 2-6) 🔴
 - **15-25% improvement** through Graph Neural Network understanding 🔴
@@ -484,6 +486,14 @@ An AI-powered Mission Control system that creates a **Digital Twin** of the sate
 - **Network-aware decisions** considering entire constellation simultaneously 🔴
 - **Scalable AI architecture** for mega-constellations (1000+ satellites) 🔴
 - **Free GPU training** using Google Colab resources 🔴
+
+### 🛰️ Real Orbital Mechanics Implementation
+- **TLE Data Integration**: Backend fetches Two-Line Element sets for accurate orbital propagation
+- **Time-Dynamic Positions**: Satellites calculated at multiple time points using Skyfield orbital mechanics
+- **CZML Format**: CesiumJS time-dynamic format with interpolated satellite trajectories
+- **Timeline Control**: Users can scrub through time to see satellite positions at any moment
+- **Orbital Prediction**: 24-hour trajectories with 5-minute resolution for smooth animation
+- **Real Physics**: Atmospheric drag, gravitational perturbations, and orbital decay included
 
 ## 🛠️ Getting Started
 
