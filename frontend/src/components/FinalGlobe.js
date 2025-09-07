@@ -10,6 +10,8 @@ const FinalGlobe = () => {
   const [viewMode, setViewMode] = useState('3D');
   const [trackingMode, setTrackingMode] = useState('AUTO');
   const [scannerActive, setScannerActive] = useState(true);
+  const [selectedSatellite, setSelectedSatellite] = useState(null);
+  const [trackingInterval, setTrackingInterval] = useState(null);
 
   useEffect(() => {
     console.log('Initializing SINGLE globe with ID:', globeId);
@@ -26,12 +28,10 @@ const FinalGlobe = () => {
           window.cesiumViewer.destroy();
         }
         
-        // Use Stamen Terrain as default
+        // Vibrant Earth with ESRI World Imagery
         const viewer = new window.Cesium.Viewer(cesiumContainer.current, {
-          imageryProvider: new window.Cesium.UrlTemplateImageryProvider({
-            url: 'https://stamen-tiles-{s}.a.ssl.fastly.net/terrain/{z}/{x}/{y}.png',
-            subdomains: ['a', 'b', 'c', 'd'],
-            credit: 'Map tiles by Stamen Design'
+          imageryProvider: new window.Cesium.ArcGisMapServerImageryProvider({
+            url: 'https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer'
           }),
           baseLayerPicker: true,
           geocoder: true,
@@ -43,6 +43,11 @@ const FinalGlobe = () => {
           timeline: true,
           creditContainer: document.createElement('div')
         });
+        
+        // Simple vibrant enhancements
+        viewer.scene.globe.enableLighting = true;
+        viewer.scene.globe.atmosphereLightIntensity = 3.0;
+        viewer.scene.globe.atmosphereSaturationShift = 0.2;
         
         // Move credits to top right
         setTimeout(() => {
@@ -219,6 +224,15 @@ const FinalGlobe = () => {
         // Load CZML data for time-dynamic satellites
         const czmlDataSource = await window.Cesium.CzmlDataSource.load(data.czml);
         viewer.dataSources.add(czmlDataSource);
+        
+        // Add click handler for satellite selection
+        viewer.cesiumWidget.screenSpaceEventHandler.setInputAction((event) => {
+          const picked = viewer.scene.pick(event.position);
+          if (picked && picked.id && picked.id.id) {
+            setSelectedSatellite(picked.id.id);
+            console.log('Selected satellite:', picked.id.id);
+          }
+        }, window.Cesium.ScreenSpaceEventType.LEFT_CLICK);
         
         // Set clock to match CZML timeline
         const startTime = window.Cesium.JulianDate.fromIso8601(data.time_range.start + 'Z');
@@ -421,23 +435,59 @@ const FinalGlobe = () => {
                 onClick={() => {
                   setTrackingMode(mode);
                   if (window.cesiumViewer) {
-                    if (mode === 'LOCK' && satellites.length > 0) {
-                      // Lock to first satellite with smooth tracking
-                      const sat = satellites[0];
-                      window.cesiumViewer.camera.flyTo({
-                        destination: window.Cesium.Cartesian3.fromDegrees(sat.longitude, sat.latitude, sat.altitude * 1000 + 500000),
-                        duration: 3.0
-                      });
-                      console.log(`Locked to satellite: ${sat.name}`);
+                    if (mode === 'LOCK' && selectedSatellite) {
+                      // Start real-time tracking of selected satellite
+                      if (trackingInterval) clearInterval(trackingInterval);
+                      
+                      const trackSatellite = () => {
+                        if (window.cesiumViewer && selectedSatellite) {
+                          const entity = window.cesiumViewer.entities.getById(selectedSatellite);
+                          if (entity && entity.position) {
+                            const position = entity.position.getValue(window.cesiumViewer.clock.currentTime);
+                            if (position) {
+                              const cartographic = window.Cesium.Cartographic.fromCartesian(position);
+                              const lon = window.Cesium.Math.toDegrees(cartographic.longitude);
+                              const lat = window.Cesium.Math.toDegrees(cartographic.latitude);
+                              const alt = cartographic.height + 500000;
+                              
+                              window.cesiumViewer.camera.setView({
+                                destination: window.Cesium.Cartesian3.fromDegrees(lon, lat, alt),
+                                orientation: {
+                                  heading: 0,
+                                  pitch: -window.Cesium.Math.PI_OVER_TWO,
+                                  roll: 0
+                                }
+                              });
+                            }
+                          }
+                        }
+                      };
+                      
+                      trackSatellite();
+                      const interval = setInterval(trackSatellite, 1000);
+                      setTrackingInterval(interval);
+                      console.log(`Locked to satellite: ${selectedSatellite}`);
+                    } else if (mode === 'LOCK' && !selectedSatellite) {
+                      alert('Please click on a satellite first, then click LOCK');
                     } else if (mode === 'AUTO') {
-                      // Auto home view to India
+                      // Stop tracking and return to India view
+                      if (trackingInterval) {
+                        clearInterval(trackingInterval);
+                        setTrackingInterval(null);
+                      }
+                      setSelectedSatellite(null);
                       window.cesiumViewer.camera.flyTo({
                         destination: window.Cesium.Cartesian3.fromDegrees(77.5946, 12.9716, 8000000),
                         duration: 2.0
                       });
                       console.log('Auto mode: Returned to India view');
                     } else if (mode === 'MANUAL') {
-                      // Enable free camera control
+                      // Stop tracking and enable free camera control
+                      if (trackingInterval) {
+                        clearInterval(trackingInterval);
+                        setTrackingInterval(null);
+                      }
+                      setSelectedSatellite(null);
                       window.cesiumViewer.scene.screenSpaceCameraController.enableRotate = true;
                       window.cesiumViewer.scene.screenSpaceCameraController.enableZoom = true;
                       window.cesiumViewer.scene.screenSpaceCameraController.enableTilt = true;
