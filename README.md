@@ -7,7 +7,7 @@
 
 *Named after Astraeus, the Titan god of the stars and planets*  
 
----
+Project Astraeus can save millions in wasted satellite bandwidth, ensure urgent disaster data is delivered in time, and help ISRO manage the coming era of mega-constellations
 
 ## 🚀 Project Overview
 
@@ -785,6 +785,6 @@ An AI-powered Mission Control system that creates a **Digital Twin** of the sate
 - **Optical Computing**: Light-based processors for faster-than-electronic scheduling
 - **DNA Storage**: Store massive constellation data in biological molecules
 
----
 
 **Project Astraeus** - Digital Twin + Graph Neural Networks solving the great traffic jam in the sky 🌟
+Project Astraeus unlocks 25% more value from ISRO’s satellites — more science, more internet, more emergency response — without launching a single new spacecraft.
