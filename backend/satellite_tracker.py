@@ -98,19 +98,28 @@ class SatelliteTracker:
         """Check if satellite is visible from ground station"""
         elevation = self.calculate_elevation_angle(satellite_name, station_name, time)
         return elevation >= min_elevation
+        
+    def get_elevation_angle(self, satellite_name: str, station_name: str, time: datetime) -> float:
+        """Get elevation angle - alias for calculate_elevation_angle"""
+        return self.calculate_elevation_angle(satellite_name, station_name, time)
 
 # Dynamic TLE data fetching
 def get_sample_tle_data():
-    """Get current TLE data or fallback to sample"""
+    """Get current TLE data from Celestrak or fallback to sample"""
     try:
         from tle_fetcher import get_current_satellite_data
+        print("Fetching live satellite data from Celestrak...")
         current_data = get_current_satellite_data()
-        if current_data:
+        if current_data and len(current_data) > 0:
+            print(f"Successfully fetched {len(current_data)} satellites from Celestrak")
             return current_data
-    except:
-        pass
+        else:
+            print("No data returned from Celestrak, using fallback")
+    except Exception as e:
+        print(f"Failed to fetch live data: {e}, using fallback")
     
     # Fallback sample data
+    print("Using fallback sample data")
     return {
         'ISS': {
             'name': 'ISS (ZARYA)',
@@ -119,7 +128,10 @@ def get_sample_tle_data():
         }
     }
 
+# Load live satellite data on startup
+print("Loading satellite data...")
 SAMPLE_TLE_DATA = get_sample_tle_data()
+print(f"Loaded {len(SAMPLE_TLE_DATA)} satellites: {list(SAMPLE_TLE_DATA.keys())}")
 
 # Sample ground stations
 SAMPLE_GROUND_STATIONS = {

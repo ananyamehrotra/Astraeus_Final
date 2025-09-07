@@ -1,11 +1,52 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 const Satellites = () => {
   const [selectedSatellite, setSelectedSatellite] = useState('ISS');
   const [missionPriority, setMissionPriority] = useState('normal');
   const [filterStatus, setFilterStatus] = useState('all');
+  const [satellites, setSatellites] = useState([]);
+  const [isConnected, setIsConnected] = useState(false);
 
-  const satellites = [
+  useEffect(() => {
+    fetchSatellites();
+  }, []);
+
+  const fetchSatellites = async () => {
+    try {
+      const response = await fetch('http://localhost:5000/api/satellites');
+      if (response.ok) {
+        const data = await response.json();
+        const formattedSats = data.satellites.map(sat => ({
+          id: sat.name,
+          name: sat.name,
+          status: 'active',
+          altitude: Math.round(sat.altitude),
+          speed: Math.round(sat.altitude < 1000 ? 27600 : sat.altitude < 2000 ? 27300 : 14000),
+          period: Math.round(sat.altitude < 1000 ? 92 : sat.altitude < 2000 ? 96 : 718),
+          power: Math.floor(Math.random() * 30) + 70,
+          thermal: 'nominal',
+          dataStorage: Math.floor(Math.random() * 60) + 20,
+          mission: sat.name.includes('ISS') ? 'Research & Crew Operations' :
+                   sat.name.includes('STARLINK') ? 'Internet Communications' :
+                   sat.name.includes('CARTOSAT') ? 'Earth Observation' :
+                   sat.name.includes('RISAT') ? 'Radar Imaging' : 'Scientific Research',
+          priority: sat.name.includes('ISS') || sat.name.includes('CARTOSAT') ? 'high' : 'normal',
+          nextPass: new Date(Date.now() + Math.random() * 6 * 3600000).toLocaleTimeString('en-US', {timeZone: 'UTC'}) + ' UTC'
+        }));
+        setSatellites(formattedSats);
+        setIsConnected(true);
+      } else {
+        throw new Error('Backend not available');
+      }
+    } catch (error) {
+      console.error('Failed to fetch satellites:', error);
+      setIsConnected(false);
+      // Fallback to mock data
+      setSatellites(mockSatellites);
+    }
+  };
+
+  const mockSatellites = [
     {
       id: 'ISS',
       name: 'International Space Station',
@@ -142,7 +183,7 @@ const Satellites = () => {
 
       {/* Satellite Detail Cards */}
       <div className="card">
-        <h2>🛰️ Active Satellites <span style={{color: '#00ff00', fontSize: '12px'}}>(R)</span></h2>
+        <h2>🛰️ Active Satellites <span style={{color: isConnected ? '#00ff00' : '#ff0000', fontSize: '12px'}}>({isConnected ? 'LIVE' : 'MOCK'})</span></h2>
         <div style={satelliteGridStyle}>
           {satellites.map(satellite => (
             <div key={satellite.id} style={satelliteCardStyle}>

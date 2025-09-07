@@ -12,6 +12,9 @@ const FinalGlobe = () => {
   const [scannerActive, setScannerActive] = useState(true);
   const [selectedSatellite, setSelectedSatellite] = useState(null);
   const [trackingInterval, setTrackingInterval] = useState(null);
+  const [isLocked, setIsLocked] = useState(false);
+  const [showLockIcon, setShowLockIcon] = useState(false);
+  const [showLiveNotification, setShowLiveNotification] = useState(false);
 
   useEffect(() => {
     console.log('Initializing SINGLE globe with ID:', globeId);
@@ -108,7 +111,6 @@ const FinalGlobe = () => {
             animation.style.position = 'relative';
           }
         }, 1000);
-        window.cesiumViewer = viewer; // Store globally to prevent duplicates
 
         viewer.entities.add({
           position: window.Cesium.Cartesian3.fromDegrees(77.5946, 12.9716),
@@ -223,7 +225,18 @@ const FinalGlobe = () => {
       if (data.czml && data.czml.length > 1) {
         // Load CZML data for time-dynamic satellites
         const czmlDataSource = await window.Cesium.CzmlDataSource.load(data.czml);
-        viewer.dataSources.add(czmlDataSource);
+        if (viewer && viewer.dataSources) {
+          viewer.dataSources.add(czmlDataSource);
+        }
+        
+        // Configure satellites to be clickable
+        czmlDataSource.entities.values.forEach(entity => {
+          if (entity.point) {
+            entity.point.heightReference = window.Cesium.HeightReference.NONE;
+            entity.point.disableDepthTestDistance = Number.POSITIVE_INFINITY;
+            entity.point.scaleByDistance = new window.Cesium.NearFarScalar(1.0e3, 2.0, 1.0e7, 0.5);
+          }
+        });
         
         // Add click handler for satellite selection
         viewer.cesiumWidget.screenSpaceEventHandler.setInputAction((event) => {
@@ -231,6 +244,13 @@ const FinalGlobe = () => {
           if (picked && picked.id && picked.id.id) {
             setSelectedSatellite(picked.id.id);
             console.log('Selected satellite:', picked.id.id);
+            // Highlight selected satellite
+            czmlDataSource.entities.values.forEach(entity => {
+              if (entity.point) {
+                entity.point.pixelSize = entity.id === picked.id.id ? 20 : 15;
+                entity.point.outlineWidth = entity.id === picked.id.id ? 3 : 2;
+              }
+            });
           }
         }, window.Cesium.ScreenSpaceEventType.LEFT_CLICK);
         
@@ -242,10 +262,31 @@ const FinalGlobe = () => {
         viewer.clock.stopTime = endTime;
         viewer.clock.currentTime = startTime;
         viewer.clock.clockRange = window.Cesium.ClockRange.LOOP_STOP;
-        viewer.clock.multiplier = 60; // 60x speed
+        viewer.clock.multiplier = 1; // Real-time speed
+        viewer.clock.shouldAnimate = true; // Enable animation
+        
+        // Force animation widget to show 1x on startup
+        setTimeout(() => {
+          if (viewer.animation && viewer.animation.viewModel) {
+            viewer.animation.viewModel.multiplier = 1;
+            viewer.animation.viewModel.shuttleRingDragging = false;
+          }
+        }, 1000);
         
         // Enable timeline
         viewer.timeline.zoomTo(startTime, endTime);
+        
+        // Ensure timeline shows 1x speed
+        setTimeout(() => {
+          if (viewer.timeline) {
+            viewer.timeline.updateFromClock();
+          }
+        }, 1500);
+        
+        // Store viewer globally for LIVE button access
+        window.cesiumViewer = viewer;
+        
+
         
         setSatellites(data.czml.slice(1).map(sat => ({ name: sat.name })));
         setStatus(`✅ LIVE ORBITAL DATA - ${data.satellites_count} satellites with real trajectories`);
@@ -369,7 +410,7 @@ const FinalGlobe = () => {
         zIndex: 1000,
         fontFamily: 'Courier New, monospace',
         boxShadow: '0 0 40px rgba(0, 255, 255, 0.6), inset 0 0 40px rgba(255, 0, 255, 0.2)',
-        minWidth: '320px',
+        minWidth: '280px',
         textShadow: '0 0 15px currentColor',
         animation: 'controlPulse 3s ease-in-out infinite'
       }}>
@@ -386,8 +427,8 @@ const FinalGlobe = () => {
         
         {/* View Controls */}
         <div style={{ marginBottom: '15px' }}>
-          <div style={{ color: '#ff00ff', fontWeight: 'bold', marginBottom: '8px' }}>🌍 VIEW MODE</div>
-          <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <span style={{ color: '#ff00ff', fontWeight: 'bold', fontSize: '11px' }}>🌍 VIEW:</span>
             {['3D', '2D', 'CV'].map(mode => (
               <button
                 key={mode}
@@ -427,54 +468,103 @@ const FinalGlobe = () => {
         
         {/* Tracking Controls */}
         <div style={{ marginBottom: '15px' }}>
-          <div style={{ color: '#ff00ff', fontWeight: 'bold', marginBottom: '8px' }}>📡 TRACKING</div>
-          <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <span style={{ color: '#ff00ff', fontWeight: 'bold', fontSize: '11px' }}>📡 TRACK:</span>
             {['AUTO', 'MANUAL', 'LOCK'].map(mode => (
               <button
                 key={mode}
                 onClick={() => {
                   setTrackingMode(mode);
                   if (window.cesiumViewer) {
-                    if (mode === 'LOCK' && selectedSatellite) {
-                      // Start real-time tracking of selected satellite
+                    if (mode === 'LOCK' && selectedSatellite && !isLocked) {
+                      // LOCK: Start tracking
                       if (trackingInterval) clearInterval(trackingInterval);
                       
+                      // Get current satellite position before freezing
+                      let entity = window.cesiumViewer.entities.getById(selectedSatellite);
+                      
+                      // If not found, try searching in data sources
+                      if (!entity) {
+                        for (let i = 0; i < window.cesiumViewer.dataSources.length; i++) {
+                          const dataSource = window.cesiumViewer.dataSources.get(i);
+                          entity = dataSource.entities.getById(selectedSatellite);
+                          if (entity) break;
+                        }
+                      }
+                      
+                      if (!entity || !entity.position) {
+                        console.log('Available entities:', window.cesiumViewer.entities.values.map(e => e.id));
+                        alert('Satellite not found or position unavailable');
+                        return;
+                      }
+                      const frozenPosition = entity.position.getValue(window.cesiumViewer.clock.currentTime);
+                      if (!frozenPosition) {
+                        alert('Could not get satellite position');
+                        return;
+                      }
+                      const frozenCartographic = window.Cesium.Cartographic.fromCartesian(frozenPosition);
+                      const frozenLon = window.Cesium.Math.toDegrees(frozenCartographic.longitude);
+                      const frozenLat = window.Cesium.Math.toDegrees(frozenCartographic.latitude);
+                      const frozenAlt = frozenCartographic.height + 500000;
+                      
                       const trackSatellite = () => {
-                        if (window.cesiumViewer && selectedSatellite) {
-                          const entity = window.cesiumViewer.entities.getById(selectedSatellite);
-                          if (entity && entity.position) {
-                            const position = entity.position.getValue(window.cesiumViewer.clock.currentTime);
-                            if (position) {
-                              const cartographic = window.Cesium.Cartographic.fromCartesian(position);
-                              const lon = window.Cesium.Math.toDegrees(cartographic.longitude);
-                              const lat = window.Cesium.Math.toDegrees(cartographic.latitude);
-                              const alt = cartographic.height + 500000;
-                              
-                              window.cesiumViewer.camera.setView({
-                                destination: window.Cesium.Cartesian3.fromDegrees(lon, lat, alt),
-                                orientation: {
-                                  heading: 0,
-                                  pitch: -window.Cesium.Math.PI_OVER_TWO,
-                                  roll: 0
-                                }
-                              });
-                            }
-                          }
+                        if (window.cesiumViewer) {
+                          window.cesiumViewer.camera.flyTo({
+                            destination: window.Cesium.Cartesian3.fromDegrees(frozenLon, frozenLat, frozenAlt),
+                            orientation: {
+                              heading: 0,
+                              pitch: -window.Cesium.Math.PI_OVER_TWO,
+                              roll: 0
+                            },
+                            duration: 1.0
+                          });
                         }
                       };
                       
-                      trackSatellite();
-                      const interval = setInterval(trackSatellite, 1000);
+                      // Initial smooth fly to satellite
+                      window.cesiumViewer.camera.flyTo({
+                        destination: window.Cesium.Cartesian3.fromDegrees(frozenLon, frozenLat, frozenAlt),
+                        orientation: {
+                          heading: 0,
+                          pitch: -window.Cesium.Math.PI_OVER_TWO,
+                          roll: 0
+                        },
+                        duration: 3.0
+                      });
+                      
+                      const interval = setInterval(trackSatellite, 2000);
                       setTrackingInterval(interval);
-                      console.log(`Locked to satellite: ${selectedSatellite}`);
-                    } else if (mode === 'LOCK' && !selectedSatellite) {
-                      alert('Please click on a satellite first, then click LOCK');
-                    } else if (mode === 'AUTO') {
-                      // Stop tracking and return to India view
+                      // Stop clock animation to freeze satellite movement
+                      window.cesiumViewer.clock.shouldAnimate = false;
+                      setIsLocked(true);
+                      setShowLockIcon(true);
+                      setTimeout(() => setShowLockIcon(false), 2000);
+                      console.log(`LOCKED: Earth moves relative to ${selectedSatellite}`);
+                    } else if (mode === 'LOCK' && isLocked) {
+                      // UNLOCK: Stop tracking
                       if (trackingInterval) {
                         clearInterval(trackingInterval);
                         setTrackingInterval(null);
                       }
+                      // Resume clock animation to unfreeze satellites
+                      window.cesiumViewer.clock.shouldAnimate = true;
+                      setIsLocked(false);
+                      setSelectedSatellite(null);
+                      setShowLockIcon(true);
+                      setTimeout(() => setShowLockIcon(false), 2000);
+                      window.cesiumViewer.camera.flyTo({
+                        destination: window.Cesium.Cartesian3.fromDegrees(77.5946, 12.9716, 8000000),
+                        duration: 2.0
+                      });
+                      console.log(`UNLOCKED: Satellite moves relative to Earth`);
+                    } else if (mode === 'LOCK' && !selectedSatellite) {
+                      alert('Please click on a satellite first, then click LOCK');
+                    } else if (mode === 'AUTO') {
+                      if (trackingInterval) {
+                        clearInterval(trackingInterval);
+                        setTrackingInterval(null);
+                      }
+                      setIsLocked(false);
                       setSelectedSatellite(null);
                       window.cesiumViewer.camera.flyTo({
                         destination: window.Cesium.Cartesian3.fromDegrees(77.5946, 12.9716, 8000000),
@@ -482,11 +572,11 @@ const FinalGlobe = () => {
                       });
                       console.log('Auto mode: Returned to India view');
                     } else if (mode === 'MANUAL') {
-                      // Stop tracking and enable free camera control
                       if (trackingInterval) {
                         clearInterval(trackingInterval);
                         setTrackingInterval(null);
                       }
+                      setIsLocked(false);
                       setSelectedSatellite(null);
                       window.cesiumViewer.scene.screenSpaceCameraController.enableRotate = true;
                       window.cesiumViewer.scene.screenSpaceCameraController.enableZoom = true;
@@ -496,7 +586,9 @@ const FinalGlobe = () => {
                   }
                 }}
                 style={{
-                  background: trackingMode === mode ? 'linear-gradient(45deg, #ff00ff, #ff44ff)' : 'rgba(255, 0, 255, 0.2)',
+                  background: trackingMode === mode ? 
+                    (mode === 'LOCK' && isLocked ? 'linear-gradient(45deg, #ff0000, #ff4444)' : 'linear-gradient(45deg, #ff00ff, #ff44ff)') : 
+                    'rgba(255, 0, 255, 0.2)',
                   border: '1px solid #ff00ff',
                   color: '#fff',
                   padding: '5px 10px',
@@ -508,39 +600,107 @@ const FinalGlobe = () => {
                   textShadow: '0 0 5px currentColor'
                 }}
               >
-                {mode}
+                {mode === 'LOCK' ? (isLocked ? 'UNLOCK' : 'LOCK') : mode}
               </button>
             ))}
           </div>
         </div>
         
-        {/* Scanner Toggle */}
+        {/* LIVE Button */}
         <div style={{ marginBottom: '10px' }}>
           <button
-            onClick={() => setScannerActive(!scannerActive)}
+            onClick={() => {
+              if (window.cesiumViewer && window.cesiumViewer.clock) {
+                // Set to current real time
+                const now = new Date();
+                const julianNow = window.Cesium.JulianDate.fromDate(now);
+                
+                // Update clock settings
+                window.cesiumViewer.clock.currentTime = julianNow;
+                window.cesiumViewer.clock.shouldAnimate = true;
+                window.cesiumViewer.clock.multiplier = 1;
+                window.cesiumViewer.clock.clockStep = window.Cesium.ClockStep.SYSTEM_CLOCK_MULTIPLIER;
+                
+                // Update timeline to current time and 1x speed
+                if (window.cesiumViewer.timeline) {
+                  window.cesiumViewer.timeline.updateFromClock();
+                  window.cesiumViewer.timeline.zoomTo(julianNow, window.Cesium.JulianDate.addHours(julianNow, 2, new window.Cesium.JulianDate()));
+                }
+                
+                // Force update animation widget
+                if (window.cesiumViewer.animation) {
+                  window.cesiumViewer.animation.viewModel.multiplier = 1;
+                  window.cesiumViewer.animation.viewModel.shuttleRingDragging = false;
+                }
+                
+                console.log('Switched to LIVE timing at 1x speed at current time:', now.toISOString());
+                
+                // Show LIVE notification
+                setShowLiveNotification(true);
+                setTimeout(() => setShowLiveNotification(false), 3000);
+              }
+            }}
             style={{
-              background: scannerActive ? 'linear-gradient(45deg, #ffff00, #ffff88)' : 'rgba(255, 255, 0, 0.2)',
-              border: '2px solid #ffff00',
-              color: '#000',
+              background: 'linear-gradient(45deg, #ff0000, #ff4444)',
+              color: 'white',
+              border: '2px solid #ff6666',
               padding: '8px 15px',
-              borderRadius: '12px',
+              borderRadius: '20px',
               fontSize: '11px',
               cursor: 'pointer',
               fontFamily: 'Courier New',
               fontWeight: 'bold',
               width: '100%',
-              boxShadow: '0 0 15px rgba(255, 255, 0, 0.4)',
-              textShadow: scannerActive ? 'none' : '0 0 5px #ffff00'
+              boxShadow: '0 0 15px rgba(255, 0, 0, 0.5)',
+              textShadow: '0 0 5px rgba(255, 255, 255, 0.8)'
             }}
           >
-            {scannerActive ? '🟢 SCANNER ACTIVE' : '🔴 SCANNER OFFLINE'}
+            🔴 LIVE MODE
           </button>
         </div>
         
-        <div style={{ fontSize: '10px', color: '#888', textAlign: 'center', borderTop: '1px solid #333', paddingTop: '8px' }}>
-          MISSION CONTROL v2.0 | PHASE 6.1
-        </div>
+
       </div>
+      
+      {/* Lock/Unlock Icon */}
+      {showLockIcon && (
+        <div style={{
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          fontSize: '60px',
+          zIndex: 10000,
+          animation: 'pulse 0.5s ease-in-out',
+          textShadow: '0 0 20px rgba(255, 255, 255, 0.8)'
+        }}>
+          {isLocked ? '🔒' : '🔓'}
+        </div>
+      )}
+      
+      {/* LIVE Mode Notification */}
+      {showLiveNotification && (
+        <div style={{
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          background: 'linear-gradient(45deg, #ff0000, #ff4444)',
+          color: 'white',
+          padding: '15px 25px',
+          borderRadius: '25px',
+          fontSize: '14px',
+          fontWeight: 'bold',
+          zIndex: 10000,
+          boxShadow: '0 0 30px rgba(255, 0, 0, 0.8)',
+          animation: 'pulse 0.5s ease-in-out',
+          textShadow: '0 0 10px rgba(255, 255, 255, 0.8)',
+          textAlign: 'center'
+        }}>
+          🔴 LIVE MODE ACTIVATED<br/>
+          <span style={{fontSize: '12px'}}>Real-time at 1x speed</span>
+        </div>
+      )}
       
       {/* Live Connection Notification */}
       {showNotification && (
@@ -616,6 +776,16 @@ const FinalGlobe = () => {
           0% { box-shadow: 0 0 40px rgba(0, 255, 255, 0.6), inset 0 0 40px rgba(255, 0, 255, 0.2); }
           50% { box-shadow: 0 0 60px rgba(0, 255, 255, 0.8), inset 0 0 60px rgba(255, 0, 255, 0.3); }
           100% { box-shadow: 0 0 40px rgba(0, 255, 255, 0.6), inset 0 0 40px rgba(255, 0, 255, 0.2); }
+        }
+        @keyframes livePulse {
+          0% { box-shadow: 0 0 30px rgba(255, 0, 0, 0.8), inset 0 0 20px rgba(255, 255, 255, 0.2); }
+          50% { box-shadow: 0 0 50px rgba(255, 0, 0, 1), inset 0 0 30px rgba(255, 255, 255, 0.4); }
+          100% { box-shadow: 0 0 30px rgba(255, 0, 0, 0.8), inset 0 0 20px rgba(255, 255, 255, 0.2); }
+        }
+        @keyframes liveClick {
+          0% { transform: translateY(-50%) scale(1); }
+          50% { transform: translateY(-50%) scale(0.9); }
+          100% { transform: translateY(-50%) scale(1.1); }
         }
       `}</style>
     </div>
