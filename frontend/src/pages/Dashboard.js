@@ -1,9 +1,27 @@
 import React from 'react';
+import LiveSatelliteTracker from '../components/LiveSatelliteTracker';
+import LiveCommunicationWindows from '../components/LiveCommunicationWindows';
+import SystemMetrics from '../components/SystemMetrics';
 
 const Dashboard = () => {
   return (
     <div>
       <h1>🚀 Mission Control Dashboard</h1>
+
+      {/* Real-Time System Metrics */}
+      <div className="dashboard-section">
+        <SystemMetrics />
+      </div>
+
+      {/* Live Satellite Tracking */}
+      <div className="dashboard-section">
+        <LiveSatelliteTracker />
+      </div>
+
+      {/* Live Communication Windows */}
+      <div className="dashboard-section">
+        <LiveCommunicationWindows />
+      </div>
 
       {/* Performance Metrics Dashboard */}
       <div className="card">

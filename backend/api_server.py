@@ -9,11 +9,14 @@ and communication window optimization.
 
 from flask import Flask, request, jsonify
 from flask_cors import CORS
+from flask_socketio import SocketIO, emit, join_room, leave_room
 from datetime import datetime, timedelta
 import json
 from typing import Dict, List, Optional
 import traceback
 import requests
+import threading
+import time
 
 # Import our backend modules
 from satellite_tracker import SatelliteTracker, SAMPLE_TLE_DATA, SAMPLE_GROUND_STATIONS
@@ -25,9 +28,18 @@ from tle_fetcher import TLEFetcher
 app = Flask(__name__)
 CORS(app)  # Enable Cross-Origin Resource Sharing for web frontend
 
+# Initialize SocketIO
+socketio = SocketIO(app, cors_allowed_origins="*", logger=True, engineio_logger=True)
+
 # Global instances
 simulator = SatelliteConstellationSimulator()
 tle_fetcher = TLEFetcher()
+
+# Real-time data broadcasting
+broadcast_active = False
+connected_clients = set()
+satellite_subscribers = set()
+window_subscribers = set()
 
 # Initialize with sample data
 simulator.initialize_sample_constellation()
@@ -658,7 +670,11 @@ def get_communication_windows():
             )
         else:
             # Find all windows across all satellites and stations
-            windows = simulator.window_detector.find_all_windows(start_time, duration_hours)
+            all_windows_dict = simulator.window_detector.find_all_windows(start_time, duration_hours)
+            # Flatten the dictionary of windows into a single list
+            windows = []
+            for pair_key, pair_windows in all_windows_dict.items():
+                windows.extend(pair_windows)
         
         # Convert windows to JSON-serializable format
         windows_data = []
@@ -840,6 +856,226 @@ def not_found(error):
 def internal_error(error):
     return jsonify({'error': 'Internal server error', 'status': 'error'}), 500
 
+# ==================== SOCKET.IO REAL-TIME EVENTS ====================
+
+@socketio.on('connect')
+def handle_connect():
+    """Handle client connection"""
+    print(f"✅ Client connected: {request.sid}")
+    connected_clients.add(request.sid)
+    
+    emit('server_status', {
+        'message': 'Connected to Project Entanglement real-time server',
+        'connected_clients': len(connected_clients),
+        'available_subscriptions': ['satellite_positions', 'communication_windows', 'server_metrics'],
+        'timestamp': datetime.utcnow().isoformat()
+    })
+
+@socketio.on('disconnect')
+def handle_disconnect():
+    """Handle client disconnection"""
+    print(f"❌ Client disconnected: {request.sid}")
+    connected_clients.discard(request.sid)
+    satellite_subscribers.discard(request.sid)
+    window_subscribers.discard(request.sid)
+
+@socketio.on('subscribe_satellites')
+def handle_subscribe_satellites():
+    """Subscribe client to satellite position updates"""
+    print(f"🛰️ Client {request.sid} subscribed to satellite updates")
+    satellite_subscribers.add(request.sid)
+    
+    # Send current satellite data immediately
+    try:
+        satellites_data = []
+        current_time = datetime.utcnow()
+        
+        for name, satellite in simulator.tracker.satellites.items():
+            try:
+                position = simulator.tracker.get_satellite_position(name, current_time)
+                satellites_data.append({
+                    'name': name,
+                    'position': {
+                        'latitude': position['latitude'],
+                        'longitude': position['longitude'],
+                        'altitude_km': position['altitude_km']
+                    },
+                    'timestamp': current_time.isoformat()
+                })
+            except Exception as e:
+                print(f"Error getting position for {name}: {e}")
+        
+        emit('satellite_update', {
+            'satellites': satellites_data,
+            'count': len(satellites_data),
+            'timestamp': current_time.isoformat()
+        })
+    except Exception as e:
+        emit('error', {'message': f'Error fetching satellites: {str(e)}'})
+
+@socketio.on('subscribe_windows')
+def handle_subscribe_windows():
+    """Subscribe client to communication window updates"""
+    print(f"📡 Client {request.sid} subscribed to window updates")
+    window_subscribers.add(request.sid)
+    
+    # Send current windows immediately
+    try:
+        start_time = datetime.utcnow()
+        all_windows_dict = simulator.window_detector.find_all_windows(start_time, 1)
+        
+        windows_data = []
+        for pair_key, pair_windows in all_windows_dict.items():
+            for window in pair_windows:
+                windows_data.append({
+                    'satellite': window.satellite_name,
+                    'ground_station': window.station_name,
+                    'start_time': window.start_time.isoformat(),
+                    'end_time': window.end_time.isoformat(),
+                    'duration_minutes': window.duration_minutes,
+                    'max_elevation': window.max_elevation,
+                    'quality_score': getattr(window, 'quality_score', 0.0)
+                })
+        
+        emit('window_update', {
+            'windows': windows_data,
+            'count': len(windows_data),
+            'timestamp': start_time.isoformat()
+        })
+    except Exception as e:
+        emit('error', {'message': f'Error fetching windows: {str(e)}'})
+
+@socketio.on('unsubscribe_satellites')
+def handle_unsubscribe_satellites():
+    """Unsubscribe client from satellite updates"""
+    satellite_subscribers.discard(request.sid)
+    emit('message', {'text': 'Unsubscribed from satellite updates'})
+
+@socketio.on('unsubscribe_windows')
+def handle_unsubscribe_windows():
+    """Unsubscribe client from window updates"""
+    window_subscribers.discard(request.sid)
+    emit('message', {'text': 'Unsubscribed from window updates'})
+
+def broadcast_satellite_positions():
+    """Broadcast real-time satellite positions to subscribed clients"""
+    if not satellite_subscribers:
+        return
+    
+    try:
+        satellites_data = []
+        current_time = datetime.utcnow()
+        
+        for name, satellite in simulator.tracker.satellites.items():
+            try:
+                position = simulator.tracker.get_satellite_position(name, current_time)
+                satellites_data.append({
+                    'name': name,
+                    'position': {
+                        'latitude': position['latitude'],
+                        'longitude': position['longitude'],
+                        'altitude_km': position['altitude_km']
+                    },
+                    'timestamp': current_time.isoformat()
+                })
+            except Exception as e:
+                print(f"Error getting position for {name}: {e}")
+        
+        if satellites_data:
+            socketio.emit('satellite_positions', {
+                'satellites': satellites_data,
+                'count': len(satellites_data),
+                'timestamp': current_time.isoformat()
+            }, room=None)
+            print(f"📡 Broadcasted {len(satellites_data)} satellite positions to {len(satellite_subscribers)} clients")
+            
+    except Exception as e:
+        print(f"Error broadcasting satellite positions: {e}")
+
+def broadcast_communication_windows():
+    """Broadcast communication windows to subscribed clients"""
+    if not window_subscribers:
+        return
+    
+    try:
+        start_time = datetime.utcnow()
+        all_windows_dict = simulator.window_detector.find_all_windows(start_time, 6)
+        
+        windows_data = []
+        for pair_key, pair_windows in all_windows_dict.items():
+            for window in pair_windows:
+                windows_data.append({
+                    'satellite': window.satellite_name,
+                    'ground_station': window.station_name,
+                    'start_time': window.start_time.isoformat(),
+                    'end_time': window.end_time.isoformat(),
+                    'duration_minutes': window.duration_minutes,
+                    'max_elevation': window.max_elevation,
+                    'quality_score': getattr(window, 'quality_score', 0.0)
+                })
+        
+        if windows_data:
+            socketio.emit('communication_windows', {
+                'windows': windows_data,
+                'count': len(windows_data),
+                'timestamp': start_time.isoformat()
+            }, room=None)
+            print(f"📡 Broadcasted {len(windows_data)} communication windows to {len(window_subscribers)} clients")
+            
+    except Exception as e:
+        print(f"Error broadcasting communication windows: {e}")
+
+def broadcast_server_metrics():
+    """Broadcast server metrics and status"""
+    if not connected_clients:
+        return
+    
+    try:
+        metrics = {
+            'connected_clients': len(connected_clients),
+            'satellite_subscribers': len(satellite_subscribers),
+            'window_subscribers': len(window_subscribers),
+            'active_satellites': len(simulator.tracker.satellites),
+            'active_ground_stations': len(simulator.tracker.ground_stations),
+            'timestamp': datetime.utcnow().isoformat()
+        }
+        
+        socketio.emit('server_status', metrics, room=None)
+        
+    except Exception as e:
+        print(f"Error broadcasting server metrics: {e}")
+
+def start_real_time_broadcasting():
+    """Start background thread for real-time data broadcasting"""
+    global broadcast_active
+    broadcast_active = True
+    
+    def broadcast_loop():
+        print("🚀 Starting real-time broadcasting...")
+        while broadcast_active:
+            try:
+                # Broadcast satellite positions every 10 seconds
+                broadcast_satellite_positions()
+                
+                # Broadcast communication windows every 60 seconds
+                if int(time.time()) % 60 == 0:
+                    broadcast_communication_windows()
+                
+                # Broadcast server metrics every 30 seconds
+                if int(time.time()) % 30 == 0:
+                    broadcast_server_metrics()
+                
+                time.sleep(10)  # Update every 10 seconds
+                
+            except Exception as e:
+                print(f"Error in broadcast loop: {e}")
+                time.sleep(5)
+    
+    # Start broadcasting in background thread
+    broadcast_thread = threading.Thread(target=broadcast_loop, daemon=True)
+    broadcast_thread.start()
+    print("✅ Real-time broadcasting started")
+
 # ==================== DEVELOPMENT SERVER ====================
 
 if __name__ == '__main__':
@@ -861,7 +1097,17 @@ if __name__ == '__main__':
     print("   • POST /api/simulation/run")
     print("   • POST /api/satellites/live-data")
     print("-" * 50)
+    print("🌐 WebSocket Events:")
+    print("   • satellite_positions (real-time)")
+    print("   • communication_windows (real-time)")
+    print("   • server_status (metrics)")
+    print("-" * 50)
     print("Server starting on http://localhost:5000")
     print("API Documentation: http://localhost:5000")
+    print("WebSocket Server: ws://localhost:5000")
     
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    # Start real-time broadcasting
+    start_real_time_broadcasting()
+    
+    # Start server with SocketIO
+    socketio.run(app, debug=True, host='0.0.0.0', port=5000)

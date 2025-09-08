@@ -24,6 +24,7 @@ body::before {
   z-index: -2;
 }
 
+/* Animated Star Field - Maintainable Implementation */
 body::after {
   content: '';
   position: fixed;
@@ -32,30 +33,417 @@ body::after {
   width: 100%;
   height: 100%;
   background-image: 
-    radial-gradient(1px 1px at 20px 30px, #ffffff, transparent),
-    radial-gradient(1px 1px at 40px 70px, #ffffff, transparent),
-    radial-gradient(2px 2px at 90px 40px, #ffd700, transparent),
-    radial-gradient(1px 1px at 130px 80px, #ffffff, transparent),
-    radial-gradient(1px 1px at 160px 30px, #48dbfb, transparent),
-    radial-gradient(1px 1px at 200px 60px, #ffffff, transparent),
-    radial-gradient(2px 2px at 250px 90px, #ffd700, transparent),
-    radial-gradient(1px 1px at 300px 40px, #ffffff, transparent),
-    radial-gradient(1px 1px at 350px 80px, #ff6b6b, transparent),
-    radial-gradient(1px 1px at 400px 20px, #ffffff, transparent);
-  background-repeat: repeat;
-  background-size: 500px 300px;
-  animation: twinkle-stars 8s ease-in-out infinite;
+    /* Large bright stars */
+    radial-gradient(var(--star-size-lg, 2px) var(--star-size-lg, 2px) at var(--star-pos-1, 20% 30%), var(--star-color-bright, #ffffff) 0%, transparent 50%),
+    radial-gradient(var(--star-size-lg, 2px) var(--star-size-lg, 2px) at var(--star-pos-2, 80% 10%), var(--star-color-bright, #ffffff) 0%, transparent 50%),
+    radial-gradient(var(--star-size-lg, 2px) var(--star-size-lg, 2px) at var(--star-pos-3, 60% 70%), var(--star-color-bright, #ffffff) 0%, transparent 50%),
+    radial-gradient(var(--star-size-lg, 2px) var(--star-size-lg, 2px) at var(--star-pos-4, 10% 80%), var(--star-color-bright, #ffffff) 0%, transparent 50%),
+    radial-gradient(var(--star-size-lg, 2px) var(--star-size-lg, 2px) at var(--star-pos-5, 90% 60%), var(--star-color-bright, #ffffff) 0%, transparent 50%),
+    /* Medium stars */
+    radial-gradient(var(--star-size-md, 1px) var(--star-size-md, 1px) at var(--star-pos-6, 15% 15%), var(--star-color-medium, #e6f3ff) 0%, transparent 50%),
+    radial-gradient(var(--star-size-md, 1px) var(--star-size-md, 1px) at var(--star-pos-7, 70% 20%), var(--star-color-medium, #e6f3ff) 0%, transparent 50%),
+    radial-gradient(var(--star-size-md, 1px) var(--star-size-md, 1px) at var(--star-pos-8, 35% 50%), var(--star-color-medium, #e6f3ff) 0%, transparent 50%),
+    radial-gradient(var(--star-size-md, 1px) var(--star-size-md, 1px) at var(--star-pos-9, 85% 85%), var(--star-color-medium, #e6f3ff) 0%, transparent 50%),
+    radial-gradient(var(--star-size-md, 1px) var(--star-size-md, 1px) at var(--star-pos-10, 25% 90%), var(--star-color-medium, #e6f3ff) 0%, transparent 50%),
+    /* Small distant stars */
+    radial-gradient(var(--star-size-sm, 0.5px) var(--star-size-sm, 0.5px) at var(--star-pos-11, 45% 25%), var(--star-color-dim, #cce7ff) 0%, transparent 50%),
+    radial-gradient(var(--star-size-sm, 0.5px) var(--star-size-sm, 0.5px) at var(--star-pos-12, 75% 45%), var(--star-color-dim, #cce7ff) 0%, transparent 50%),
+    radial-gradient(var(--star-size-sm, 0.5px) var(--star-size-sm, 0.5px) at var(--star-pos-13, 55% 75%), var(--star-color-dim, #cce7ff) 0%, transparent 50%),
+    radial-gradient(var(--star-size-sm, 0.5px) var(--star-size-sm, 0.5px) at var(--star-pos-14, 5% 40%), var(--star-color-dim, #cce7ff) 0%, transparent 50%),
+    radial-gradient(var(--star-size-sm, 0.5px) var(--star-size-sm, 0.5px) at var(--star-pos-15, 95% 25%), var(--star-color-dim, #cce7ff) 0%, transparent 50%);
+  animation: twinkle-stars 8s ease-in-out infinite alternate;
   z-index: -1;
 }
 
+/* CSS Custom Properties for Easy Star Field Customization */
+:root {
+  --star-color-bright: #ffffff;
+  --star-color-medium: #e6f3ff;
+  --star-color-dim: #cce7ff;
+  --star-size-lg: 2px;
+  --star-size-md: 1px;
+  --star-size-sm: 0.5px;
+  --star-pos-1: 20% 30%;
+  --star-pos-2: 80% 10%;
+  --star-pos-3: 60% 70%;
+  --star-pos-4: 10% 80%;
+  --star-pos-5: 90% 60%;
+  --star-pos-6: 15% 15%;
+  --star-pos-7: 70% 20%;
+  --star-pos-8: 35% 50%;
+  --star-pos-9: 85% 85%;
+  --star-pos-10: 25% 90%;
+  --star-pos-11: 45% 25%;
+  --star-pos-12: 75% 45%;
+  --star-pos-13: 55% 75%;
+  --star-pos-14: 5% 40%;
+  --star-pos-15: 95% 25%;
+}
+
+/* Real-Time Dashboard Components */
+.dashboard-section {
+  margin: 20px 0;
+}
+
+/* Live Satellite Tracker Styles */
+.live-satellite-tracker {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 20px;
+  margin: 20px 0;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.tracker-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.tracker-controls {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.connection-status {
+  font-weight: bold;
+  padding: 5px 10px;
+  border-radius: 20px;
+  background: rgba(0, 0, 0, 0.3);
+  font-size: 14px;
+}
+
+.satellite-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 15px;
+  margin: 20px 0;
+}
+
+.satellite-card {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 15px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.satellite-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(102, 126, 234, 0.3);
+}
+
+.satellite-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.satellite-header h4 {
+  margin: 0;
+  color: #667eea;
+}
+
+.status-indicator {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #4CAF50;
+}
+
+.status-indicator.inactive {
+  background: #9E9E9E;
+}
+
+.position-data p {
+  margin: 5px 0;
+  font-size: 14px;
+}
+
+.satellite-meta {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.tle-info {
+  font-size: 12px;
+  color: #ccc;
+  font-family: monospace;
+}
+
+.tracker-summary {
+  text-align: center;
+  margin-top: 20px;
+  padding-top: 15px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  color: #ccc;
+}
+
+/* Communication Windows Styles */
+.live-communication-windows {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 20px;
+  margin: 20px 0;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.windows-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.windows-controls {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.auto-refresh-toggle {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: #ccc;
+  cursor: pointer;
+}
+
+.windows-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 15px;
+  margin: 20px 0;
+}
+
+.window-card {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 15px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.window-card.status-active {
+  border-color: #4CAF50;
+  box-shadow: 0 0 10px rgba(76, 175, 80, 0.3);
+}
+
+.window-card.status-upcoming {
+  border-color: #FF9800;
+}
+
+.window-card.status-past {
+  opacity: 0.6;
+}
+
+.window-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(102, 126, 234, 0.3);
+}
+
+.window-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.window-header h4 {
+  margin: 0;
+  color: #667eea;
+}
+
+.status-badge {
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: bold;
+  color: white;
+}
+
+.window-details {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+}
+
+.time-info p,
+.technical-info p {
+  margin: 5px 0;
+  font-size: 14px;
+}
+
+.window-notes {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  font-style: italic;
+  color: #ccc;
+}
+
+.windows-summary {
+  text-align: center;
+  margin-top: 20px;
+  padding-top: 15px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  color: #ccc;
+}
+
+/* System Metrics Styles */
+.system-metrics {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 20px;
+  margin: 20px 0;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.metrics-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 15px;
+  margin: 20px 0;
+}
+
+.metric-card {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 15px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.metric-card.primary {
+  border-left: 4px solid #667eea;
+}
+
+.metric-card.status {
+  border-left: 4px solid #4CAF50;
+}
+
+.metric-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(102, 126, 234, 0.3);
+}
+
+.metric-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 5px;
+}
+
+.metric-header h4 {
+  margin: 0;
+  color: #667eea;
+  font-size: 16px;
+}
+
+.metric-value {
+  font-size: 24px;
+  font-weight: bold;
+  color: #fff;
+}
+
+.status-indicator {
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.metric-description {
+  margin: 5px 0 0 0;
+  font-size: 12px;
+  color: #ccc;
+}
+
+.metrics-info {
+  margin-top: 20px;
+  padding-top: 15px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.system-capabilities {
+  margin-top: 15px;
+}
+
+.system-capabilities h4 {
+  color: #667eea;
+  margin-bottom: 10px;
+}
+
+.system-capabilities ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.system-capabilities li {
+  margin: 5px 0;
+  font-size: 14px;
+}
+
+/* Common Styles */
+.error-message {
+  background: rgba(244, 67, 54, 0.1);
+  border: 1px solid rgba(244, 67, 54, 0.3);
+  border-radius: 8px;
+  padding: 10px;
+  margin: 10px 0;
+  color: #f44336;
+}
+
+.last-update {
+  text-align: center;
+  font-size: 12px;
+  color: #ccc;
+  margin: 10px 0;
+}
+
+.no-data {
+  text-align: center;
+  padding: 40px 20px;
+  color: #ccc;
+  font-style: italic;
+}
+
+.btn-small {
+  padding: 5px 10px;
+  font-size: 12px;
+  border-radius: 6px;
+}
+
 @keyframes twinkle-stars {
-  0%, 100% {
-    opacity: 0.8;
+  0% {
+    opacity: 0.7;
     transform: scale(1);
+  }
+  25% {
+    opacity: 0.9;
+    transform: scale(1.05);
   }
   50% {
     opacity: 1;
     transform: scale(1.1);
+  }
+  75% {
+    opacity: 0.8;
+    transform: scale(1.05);
+  }
+  100% {
+    opacity: 0.6;
+    transform: scale(0.95);
   }
 }
 
