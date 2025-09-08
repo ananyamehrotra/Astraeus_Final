@@ -499,26 +499,10 @@ An AI-powered Mission Control system that creates a **Digital Twin** of the sate
 
 ### Current Status (Sub-Phase 1.1 & 1.2 Complete)
 1. Clone the repository
-2. **Backend**: 
-   ```bash
-   cd backend
-   pip install -r requirements.txt
-   python api_server.py
-   ```
-3. **Frontend**: 
-   ```bash
-   cd frontend
-   set PORT=3000
-   npm install
-   npm start
-   ```
+2. **Backend**: Install dependencies: `pip install -r requirements.txt`
+3. **Frontend**: `cd frontend && npm install && npm start`
 4. **Test backend**: `python backend/test_simulation.py`
 5. **View frontend**: Open `http://localhost:3000`
-
-**Ports Configuration:**
-- **Backend API**: http://localhost:5000 (Flask server)
-- **Frontend**: http://localhost:3000 (React app)
-- **WebSocket**: http://localhost:5001 (Real-time data)
 
 ### Sample Output
 ```
