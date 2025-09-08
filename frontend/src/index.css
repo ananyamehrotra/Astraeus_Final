@@ -24,6 +24,62 @@ body::before {
   z-index: -2;
 }
 
+/* Animated Star Field - Maintainable Implementation */
+body::after {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: 
+    /* Large bright stars */
+    radial-gradient(var(--star-size-lg, 2px) var(--star-size-lg, 2px) at var(--star-pos-1, 20% 30%), var(--star-color-bright, #ffffff) 0%, transparent 50%),
+    radial-gradient(var(--star-size-lg, 2px) var(--star-size-lg, 2px) at var(--star-pos-2, 80% 10%), var(--star-color-bright, #ffffff) 0%, transparent 50%),
+    radial-gradient(var(--star-size-lg, 2px) var(--star-size-lg, 2px) at var(--star-pos-3, 60% 70%), var(--star-color-bright, #ffffff) 0%, transparent 50%),
+    radial-gradient(var(--star-size-lg, 2px) var(--star-size-lg, 2px) at var(--star-pos-4, 10% 80%), var(--star-color-bright, #ffffff) 0%, transparent 50%),
+    radial-gradient(var(--star-size-lg, 2px) var(--star-size-lg, 2px) at var(--star-pos-5, 90% 60%), var(--star-color-bright, #ffffff) 0%, transparent 50%),
+    /* Medium stars */
+    radial-gradient(var(--star-size-md, 1px) var(--star-size-md, 1px) at var(--star-pos-6, 15% 15%), var(--star-color-medium, #e6f3ff) 0%, transparent 50%),
+    radial-gradient(var(--star-size-md, 1px) var(--star-size-md, 1px) at var(--star-pos-7, 70% 20%), var(--star-color-medium, #e6f3ff) 0%, transparent 50%),
+    radial-gradient(var(--star-size-md, 1px) var(--star-size-md, 1px) at var(--star-pos-8, 35% 50%), var(--star-color-medium, #e6f3ff) 0%, transparent 50%),
+    radial-gradient(var(--star-size-md, 1px) var(--star-size-md, 1px) at var(--star-pos-9, 85% 85%), var(--star-color-medium, #e6f3ff) 0%, transparent 50%),
+    radial-gradient(var(--star-size-md, 1px) var(--star-size-md, 1px) at var(--star-pos-10, 25% 90%), var(--star-color-medium, #e6f3ff) 0%, transparent 50%),
+    /* Small distant stars */
+    radial-gradient(var(--star-size-sm, 0.5px) var(--star-size-sm, 0.5px) at var(--star-pos-11, 45% 25%), var(--star-color-dim, #cce7ff) 0%, transparent 50%),
+    radial-gradient(var(--star-size-sm, 0.5px) var(--star-size-sm, 0.5px) at var(--star-pos-12, 75% 45%), var(--star-color-dim, #cce7ff) 0%, transparent 50%),
+    radial-gradient(var(--star-size-sm, 0.5px) var(--star-size-sm, 0.5px) at var(--star-pos-13, 55% 75%), var(--star-color-dim, #cce7ff) 0%, transparent 50%),
+    radial-gradient(var(--star-size-sm, 0.5px) var(--star-size-sm, 0.5px) at var(--star-pos-14, 5% 40%), var(--star-color-dim, #cce7ff) 0%, transparent 50%),
+    radial-gradient(var(--star-size-sm, 0.5px) var(--star-size-sm, 0.5px) at var(--star-pos-15, 95% 25%), var(--star-color-dim, #cce7ff) 0%, transparent 50%);
+  animation: twinkle-stars 8s ease-in-out infinite alternate;
+  z-index: -1;
+}
+
+/* CSS Custom Properties for Easy Star Field Customization */
+:root {
+  --star-color-bright: #ffffff;
+  --star-color-medium: #e6f3ff;
+  --star-color-dim: #cce7ff;
+  --star-size-lg: 2px;
+  --star-size-md: 1px;
+  --star-size-sm: 0.5px;
+  --star-pos-1: 20% 30%;
+  --star-pos-2: 80% 10%;
+  --star-pos-3: 60% 70%;
+  --star-pos-4: 10% 80%;
+  --star-pos-5: 90% 60%;
+  --star-pos-6: 15% 15%;
+  --star-pos-7: 70% 20%;
+  --star-pos-8: 35% 50%;
+  --star-pos-9: 85% 85%;
+  --star-pos-10: 25% 90%;
+  --star-pos-11: 45% 25%;
+  --star-pos-12: 75% 45%;
+  --star-pos-13: 55% 75%;
+  --star-pos-14: 5% 40%;
+  --star-pos-15: 95% 25%;
+}
+
 /* Real-Time Dashboard Components */
 .dashboard-section {
   margin: 20px 0;
@@ -369,13 +425,25 @@ body::before {
 }
 
 @keyframes twinkle-stars {
-  0%, 100% {
-    opacity: 0.8;
+  0% {
+    opacity: 0.7;
     transform: scale(1);
+  }
+  25% {
+    opacity: 0.9;
+    transform: scale(1.05);
   }
   50% {
     opacity: 1;
     transform: scale(1.1);
+  }
+  75% {
+    opacity: 0.8;
+    transform: scale(1.05);
+  }
+  100% {
+    opacity: 0.6;
+    transform: scale(0.95);
   }
 }
 
