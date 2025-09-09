@@ -15,6 +15,8 @@ const FinalGlobe = () => {
   const [isLocked, setIsLocked] = useState(false);
   const [showLockIcon, setShowLockIcon] = useState(false);
   const [showLiveNotification, setShowLiveNotification] = useState(false);
+  const [showMenu, setShowMenu] = useState(true);
+
 
   useEffect(() => {
     console.log('Initializing SINGLE globe with ID:', globeId);
@@ -128,6 +130,16 @@ const FinalGlobe = () => {
             pixelOffset: new window.Cesium.Cartesian2(0, -40)
           }
         });
+        viewer.entities.add({
+  name: "Moon",
+  position: Cesium.Cartesian3.fromDegrees(-60, 0, 384400000),
+  ellipsoid: {
+    radii: new Cesium.Cartesian3(1737000, 1737000, 1737000),
+    material: new Cesium.ImageMaterialProperty({
+      image: "https://planetarynames.wr.usgs.gov/images/moon_texture.jpg",
+    }),
+  },
+});
 
         // Set home view to your location (India region) with good globe visibility
         viewer.homeButton.viewModel.command.beforeExecute.addEventListener(function(e) {
@@ -154,18 +166,18 @@ const FinalGlobe = () => {
         // Add live scale display
         const scaleDisplay = document.createElement('div');
         scaleDisplay.style.position = 'absolute';
-        scaleDisplay.style.bottom = '120px';
-        scaleDisplay.style.left = '20px';
-        scaleDisplay.style.background = 'linear-gradient(135deg, rgba(0, 255, 255, 0.2), rgba(255, 0, 255, 0.2))';
+        scaleDisplay.style.bottom = '40px';
+        scaleDisplay.style.left = '1220px';
+        scaleDisplay.style.background = 'linear-gradient(135deg, rgba(48, 42, 42, 0.31), rgba(255, 0, 255, 0.2))';
         scaleDisplay.style.color = '#00ffff';
         scaleDisplay.style.padding = '15px';
         scaleDisplay.style.borderRadius = '15px';
-        scaleDisplay.style.fontSize = '14px';
+        scaleDisplay.style.fontSize = '15px';
         scaleDisplay.style.zIndex = '99999';
         scaleDisplay.style.border = '2px solid #00ffff';
-        scaleDisplay.style.backdropFilter = 'blur(10px)';
-        scaleDisplay.style.fontFamily = 'Courier New, monospace';
-        scaleDisplay.style.boxShadow = '0 0 20px rgba(0, 255, 255, 0.4)';
+        scaleDisplay.style.backdropFilter = 'blur(1px)';
+        scaleDisplay.style.fontFamily = 'Consolas, monospace';
+        scaleDisplay.style.boxShadow = '0 0 20px rgba(0, 0, 0, 1)';
         scaleDisplay.id = 'scale-display';
         cesiumContainer.current.appendChild(scaleDisplay);
         
@@ -178,7 +190,7 @@ const FinalGlobe = () => {
                       altitude > 100000 ? 'Regional' :
                       altitude > 10000 ? 'City' : 'Local';
           scaleDisplay.innerHTML = `
-            <div style="font-weight: bold; color: #ffff00; margin-bottom: 5px;">📏 SCALE INDICATOR</div>
+            <div style="font-weight: bold; color: #ffff00; margin-bottom: 5px;">SCALE INDICATOR</div>
             <div>Altitude: ${altitudeKm} km</div>
             <div>Scale: ${scale}</div>
             <div>Zoom Level: ${Math.round(10 - Math.log10(altitude/1000))}</div>
@@ -400,35 +412,89 @@ const FinalGlobe = () => {
         position: 'absolute',
         top: '15px',
         left: '15px',
-        background: 'linear-gradient(135deg, rgba(0, 255, 255, 0.2) 0%, rgba(255, 0, 255, 0.2) 50%, rgba(0, 255, 0, 0.2) 100%)',
-        backdropFilter: 'blur(20px)',
-        border: '3px solid #00ffff',
-        color: '#00ffff',
+        background: 'linear-gradient(135deg, rgba(255, 255, 255, 0) 0%, rgba(255, 0, 255, 0) 50%, rgba(0, 255, 0, 0) 100%)',
+        backdropFilter: 'blur(2px)',
+        border: '3px solid #00ffff92',
+        color: '#00ffffff',
         padding: '20px',
         borderRadius: '20px',
-        fontSize: '12px',
+        fontSize: '15px',
         zIndex: 1000,
-        fontFamily: 'Courier New, monospace',
-        boxShadow: '0 0 40px rgba(0, 255, 255, 0.6), inset 0 0 40px rgba(255, 0, 255, 0.2)',
+        fontFamily: 'Consolas, monospace',
+        boxShadow: '0 0 1px rgba(0, 0, 0, 1), inset 0 0 40px rgba(0, 0, 0, 1)',
         minWidth: '280px',
         textShadow: '0 0 15px currentColor',
         animation: 'controlPulse 3s ease-in-out infinite'
       }}>
-        <div style={{ color: '#ff00ff', fontWeight: 'bold', marginBottom: '12px', fontSize: '16px', textAlign: 'center' }}>
-          🚀 ASTRAEUS COMMAND CENTER 🚀
+        <div style={{ color: '#ffffffff', fontWeight: 'bold', marginBottom: '12px', fontSize: '18px', textAlign: 'center' }}>
+          ASTRAEUS COMMAND CENTER
         </div>
         
         {/* Status Display */}
-        <div style={{ marginBottom: '15px', padding: '10px', background: 'rgba(0, 0, 0, 0.3)', borderRadius: '10px', border: '1px solid #00ff00' }}>
-          <div><span style={{ color: '#00ff00' }}>STATUS:</span> <span style={{ color: '#fff' }}>{status}</span></div>
-          <div><span style={{ color: '#ffff00' }}>SATELLITES:</span> <span style={{ color: '#fff' }}>{satellites.length}</span></div>
-          <div><span style={{ color: '#ff6600' }}>CONNECTION:</span> <span style={{ color: isConnected ? '#00ff00' : '#ff0000' }}>{isConnected ? 'ONLINE' : 'OFFLINE'}</span></div>
+<div
+  style={{
+    marginBottom: "15px",
+    padding: "16px",
+    borderRadius: "12px",
+    background: "linear-gradient(145deg, rgba(20,20,20,0.9), rgba(10,10,10,0.7))",
+    boxShadow: "0 0 12px rgba(0, 255, 100, 0.25), inset 0 0 8px rgba(0, 255, 100, 0.15)",
+    border: "1px solid rgba(0,255,100,0.4)",
+    color: "#fff",
+    fontFamily: "Consolas, monospace",
+  }}
+>
+  {/* Satellites Count */}
+  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "6px" }}>
+    <span style={{ color: "#ffe066", fontWeight: "bold" }}>SATELLITES:</span>
+    <span>{satellites.length}</span>
+  </div>
+
+  {/* Connection */}
+  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "12px" }}>
+    <span style={{ color: "#4dff4d", fontWeight: "bold" }}>CONNECTION:</span>
+    <span style={{ color: isConnected ? "#00ff90" : "#ff4444", fontWeight: "bold" }}>
+      {isConnected ? "ONLINE" : "OFFLINE"}
+    </span>
+  </div>
+
+  {/* List of Satellites */}
+  <div>
+    <span style={{ color: "#66b3ff", fontWeight: "bold", display: "block", marginBottom: "10px" }}>
+      LIST OF THE SATELLITES:
+    </span>
+    <div
+      style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(3, 1fr)",
+        gap: "8px",
+      }}
+    >
+      {satellites.map((sat, index) => (
+        <div
+          key={index}
+          style={{
+            padding: "6px 8px",
+            background: "rgba(0, 255, 150, 0.08)",
+            borderRadius: "6px",
+            textAlign: "center",
+            color: "#ddd",
+            textShadow: "0 0 4px rgba(0,255,255,0.4)",
+            fontSize: "0.9rem",
+          }}
+        >
+          {sat.name || `Satellite ${index + 1}`}
         </div>
+      ))}
+    </div>
+  </div>
+</div>
+
+
         
         {/* View Controls */}
         <div style={{ marginBottom: '15px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <span style={{ color: '#ff00ff', fontWeight: 'bold', fontSize: '11px' }}>🌍 VIEW:</span>
+            <span style={{ color: '#ffffffff', fontWeight: 'bold', fontSize: '15px' }}>VIEW MODE:</span>
             {['3D', '2D', 'CV'].map(mode => (
               <button
                 key={mode}
@@ -448,14 +514,14 @@ const FinalGlobe = () => {
                   }
                 }}
                 style={{
-                  background: viewMode === mode ? 'linear-gradient(45deg, #00ff00, #00ff88)' : 'rgba(0, 255, 255, 0.2)',
-                  border: '1px solid #00ffff',
-                  color: '#fff',
+                  background: viewMode === mode ? 'linear-gradient(45deg, #242924ff, #566861ff)' : 'rgba(0, 255, 255, 0.2)',
+                  border: '1px solid #237474ff',
+                  color: '#ffffffff',
                   padding: '5px 10px',
-                  borderRadius: '8px',
-                  fontSize: '10px',
+                  borderRadius: '7px',
+                  fontSize: '13px',
                   cursor: 'pointer',
-                  fontFamily: 'Courier New',
+                  fontFamily: 'Consolas, monospace',
                   boxShadow: '0 0 10px rgba(0, 255, 255, 0.3)',
                   textShadow: '0 0 5px currentColor'
                 }}
@@ -469,7 +535,7 @@ const FinalGlobe = () => {
         {/* Tracking Controls */}
         <div style={{ marginBottom: '15px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <span style={{ color: '#ff00ff', fontWeight: 'bold', fontSize: '11px' }}>📡 TRACK:</span>
+            <span style={{ color: '#ffffffff', fontWeight: 'bold', fontSize: '15px' }}>TRACK:</span>
             {['AUTO', 'MANUAL', 'LOCK'].map(mode => (
               <button
                 key={mode}
@@ -587,17 +653,17 @@ const FinalGlobe = () => {
                 }}
                 style={{
                   background: trackingMode === mode ? 
-                    (mode === 'LOCK' && isLocked ? 'linear-gradient(45deg, #ff0000, #ff4444)' : 'linear-gradient(45deg, #ff00ff, #ff44ff)') : 
+                    (mode === 'LOCK' && isLocked ? 'linear-gradient(45deg, #ff0000, #ff4444)' : 'linear-gradient(45deg, #2e2a2eff, #6a5d6aff)') : 
                     'rgba(255, 0, 255, 0.2)',
-                  border: '1px solid #ff00ff',
+                  border: '1px solid #615761ff',
                   color: '#fff',
                   padding: '5px 10px',
-                  borderRadius: '8px',
-                  fontSize: '10px',
+                  borderRadius: '7px',
+                  fontSize: '13px',
                   cursor: 'pointer',
-                  fontFamily: 'Courier New',
-                  boxShadow: '0 0 10px rgba(255, 0, 255, 0.3)',
-                  textShadow: '0 0 5px currentColor'
+                  fontFamily: 'Consolas, monospace',
+                  boxShadow: '0 0 10px rgba(0, 0, 0, 0)',
+                  textShadow: '0 0 1px currentColor'
                 }}
               >
                 {mode === 'LOCK' ? (isLocked ? 'UNLOCK' : 'LOCK') : mode}
@@ -645,17 +711,17 @@ const FinalGlobe = () => {
               color: 'white',
               border: '2px solid #ff6666',
               padding: '8px 15px',
-              borderRadius: '20px',
-              fontSize: '11px',
+              borderRadius: '10px',
+              fontSize: '15px',
               cursor: 'pointer',
-              fontFamily: 'Courier New',
+              fontFamily: 'Consolas, monospace',
               fontWeight: 'bold',
               width: '100%',
               boxShadow: '0 0 15px rgba(255, 0, 0, 0.5)',
               textShadow: '0 0 5px rgba(255, 255, 255, 0.8)'
             }}
           >
-            🔴 LIVE MODE
+            LIVE MODE
           </button>
         </div>
         
