@@ -2,6 +2,7 @@ import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import Navigation from './components/Navigation';
 import StarField from './components/StarField';
+import NotificationSystem from './components/NotificationSystem';
 import Dashboard from './pages/Dashboard';
 import Satellites from './pages/Satellites';
 import Schedule from './pages/Schedule';
@@ -13,9 +14,11 @@ function App() {
     <div className="App">
       <StarField />
       <Navigation />
+      <NotificationSystem />
       <div className="container">
         <Routes>
-          <Route path="/" element={<Dashboard />} />
+          <Route path="/" element={<Globe />} />
+          <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/satellites" element={<Satellites />} />
           <Route path="/schedule" element={<Schedule />} />
           <Route path="/analytics" element={<Analytics />} />

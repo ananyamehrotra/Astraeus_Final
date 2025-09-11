@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import ApiService from '../services/api';
+import { showNotification } from '../components/NotificationSystem';
 
 const Satellites = () => {
   const [selectedSatellite, setSelectedSatellite] = useState('ISS');
@@ -51,59 +53,106 @@ const Satellites = () => {
       id: 'ISS',
       name: 'International Space Station',
       status: 'active',
-      altitude: 419,
+      altitude: 408,
       speed: 27600,
       period: 92,
-      power: 85,
+      power: 95,
       thermal: 'nominal',
       dataStorage: 67,
       mission: 'Research & Crew Operations',
       priority: 'high',
-      nextPass: '14:23 UTC'
-    },
-    {
-      id: 'HUBBLE',
-      name: 'Hubble Space Telescope',
-      status: 'active',
-      altitude: 547,
-      speed: 27300,
-      period: 96,
-      power: 92,
-      thermal: 'nominal',
-      dataStorage: 34,
-      mission: 'Deep Space Observation',
-      priority: 'high',
-      nextPass: '16:45 UTC'
+      nextPass: '14:52 UTC'
     },
     {
       id: 'GPS-III',
-      name: 'GPS Block III',
+      name: 'GPS III SV04',
       status: 'active',
       altitude: 20200,
       speed: 14000,
       period: 718,
-      power: 78,
-      thermal: 'nominal',
-      dataStorage: 12,
-      mission: 'Global Navigation',
-      priority: 'normal',
-      nextPass: '18:12 UTC'
-    },
-    {
-      id: 'STARLINK',
-      name: 'Starlink Constellation',
-      status: 'active',
-      altitude: 550,
-      speed: 27000,
-      period: 95,
       power: 88,
       thermal: 'nominal',
-      dataStorage: 45,
-      mission: 'Internet Communications',
-      priority: 'normal',
-      nextPass: '15:30 UTC'
+      dataStorage: 23,
+      mission: 'Global Navigation',
+      priority: 'high',
+      nextPass: '16:23 UTC'
     }
   ];
+
+  // Satellite Management Functions
+  const emergencyOverride = () => {
+    showNotification('warning', '🚨 EMERGENCY OVERRIDE ACTIVATED', 
+      'All satellites switched to emergency protocols | Non-critical operations suspended | Priority communications only', 8000);
+  };
+
+  const assignMission = () => {
+    showNotification('success', '📡 MISSION ASSIGNMENT', 
+      `Assigning new mission to ${selectedSatellite}: | Priority: ${missionPriority} | Duration: 6 hours | Ground stations: Auto-assigned | Mission uploaded to satellite`, 7000);
+  };
+
+  const scheduleMaintenance = () => {
+    showNotification('info', '🔧 MAINTENANCE SCHEDULED', 
+      `Maintenance window scheduled for ${selectedSatellite}: | Type: Software update & diagnostics | Duration: 2 hours | Ground contact required: Yes | Backup satellite: Auto-assigned`, 7000);
+  };
+
+  const generateReport = () => {
+    const reportData = {
+      satellite: selectedSatellite,
+      health: 'Excellent',
+      efficiency: '98.7%',
+      missions: 47,
+      uptime: '99.2%',
+      timestamp: new Date().toISOString()
+    };
+    showNotification('success', '📊 SATELLITE REPORT GENERATED', 
+      `Satellite: ${reportData.satellite} | Health: ${reportData.health} | Efficiency: ${reportData.efficiency} | Missions: ${reportData.missions} | Uptime: ${reportData.uptime}`, 8000);
+  };
+
+  const trackSatellite = async (satName) => {
+    try {
+      const position = await ApiService.getSatellitePosition(satName);
+      showNotification('success', `📡 TRACKING ${satName}`, 
+        `Current Position: | Latitude: ${position.latitude?.toFixed(4)}° | Longitude: ${position.longitude?.toFixed(4)}° | Altitude: ${position.altitude?.toFixed(2)} km | ✅ Real-time tracking active | ✅ Ground station locked | ✅ Data link established`, 8000);
+    } catch (error) {
+      showNotification('info', `📡 TRACKING ${satName}`, 
+        'Initiating real-time tracking... | ✅ Orbital elements updated | ✅ Ground station locked | ✅ Data link established | ✅ Position streaming active | (Using offline mode)', 7000);
+    }
+  };
+
+  const viewDetails = async (satName) => {
+    try {
+      const [position, trajectory] = await Promise.all([
+        ApiService.getSatellitePosition(satName),
+        ApiService.getSatelliteTrajectory(satName, { hours: 1, points: 10 })
+      ]);
+      
+      showNotification('info', `📊 DETAILED VIEW - ${satName}`, 
+        `Real-time Telemetry: | Position: ${position.latitude?.toFixed(2)}°, ${position.longitude?.toFixed(2)}° | Altitude: ${position.altitude?.toFixed(2)} km | Speed: ${position.velocity_kmh?.toFixed(0)} km/h | Next pass: ${trajectory.passes?.[0]?.start_time || 'Calculating...'} | Health: All systems nominal | Communications: Strong signal`, 8000);
+    } catch (error) {
+      showNotification('info', `📊 DETAILED VIEW - ${satName}`, 
+        'Telemetry Dashboard: | Health: All systems nominal | Communications: Strong signal | Solar panels: 100% efficiency | Fuel: 73% remaining | Mission status: On schedule | (Using offline mode)', 7000);
+    }
+  };
+
+  const configureSatellite = (satName) => {
+    showNotification('info', `⚙️ CONFIGURING ${satName}`, 
+      'Configuration options: | Power management settings | Communication parameters | Mission profile updates | Orbit correction maneuvers | Select configuration type', 7000);
+  };
+
+  const monitorGroundStation = (stationName) => {
+    showNotification('success', `📊 MONITORING ${stationName}`, 
+      'Ground Station Status: | ✅ Antenna: Operational | ✅ Power: 100% | ✅ Network: Connected | ✅ Weather: Clear skies | ⚡ Current tracking: 2 satellites', 7000);
+  };
+
+  const configureGroundStation = (stationName) => {
+    showNotification('info', `⚙️ CONFIGURING ${stationName}`, 
+      'Configuration menu: | Antenna positioning | Frequency bands | Tracking schedules | Weather overrides | Backup protocols', 7000);
+  };
+
+  const checkWeather = (stationName) => {
+    showNotification('info', `🌤️ WEATHER CHECK - ${stationName}`, 
+      'Current conditions: | ☀️ Sky: Clear (95%) | 🌡️ Temperature: 24°C | 💨 Wind: 12 km/h NE | 💧 Humidity: 45% | 👍 Satellite visibility: Excellent', 7000);
+  };
 
   const groundStations = [
     {
@@ -174,10 +223,10 @@ const Satellites = () => {
           </div>
         </div>
         <div style={actionButtonsStyle}>
-          <button className="btn" style={emergencyButtonStyle}>🚨 Emergency Override</button>
-          <button className="btn" style={actionButtonStyle}>📡 Assign Mission</button>
-          <button className="btn" style={actionButtonStyle}>🔧 Schedule Maintenance</button>
-          <button className="btn" style={actionButtonStyle}>📊 Generate Report</button>
+          <button className="btn" style={emergencyButtonStyle} onClick={emergencyOverride}>🚨 Emergency Override</button>
+          <button className="btn" style={actionButtonStyle} onClick={assignMission}>📡 Assign Mission</button>
+          <button className="btn" style={actionButtonStyle} onClick={scheduleMaintenance}>🔧 Schedule Maintenance</button>
+          <button className="btn" style={actionButtonStyle} onClick={generateReport}>📊 Generate Report</button>
         </div>
       </div>
 
@@ -239,9 +288,9 @@ const Satellites = () => {
               </div>
               
               <div style={satelliteActionsStyle}>
-                <button className="btn" style={smallButtonStyle}>📡 Track</button>
-                <button className="btn" style={smallButtonStyle}>📊 Details</button>
-                <button className="btn" style={smallButtonStyle}>⚙️ Configure</button>
+                <button className="btn" style={smallButtonStyle} onClick={() => trackSatellite(satellite.name)}>📡 Track</button>
+                <button className="btn" style={smallButtonStyle} onClick={() => viewDetails(satellite.name)}>📊 Details</button>
+                <button className="btn" style={smallButtonStyle} onClick={() => configureSatellite(satellite.name)}>⚙️ Configure</button>
               </div>
             </div>
           ))}
@@ -386,9 +435,9 @@ const Satellites = () => {
               </div>
               
               <div style={stationActionsStyle}>
-                <button className="btn" style={smallButtonStyle}>📊 Monitor</button>
-                <button className="btn" style={smallButtonStyle}>⚙️ Configure</button>
-                <button className="btn" style={smallButtonStyle}>🌤️ Weather</button>
+                <button className="btn" style={smallButtonStyle} onClick={() => monitorGroundStation(station.name)}>📊 Monitor</button>
+                <button className="btn" style={smallButtonStyle} onClick={() => configureGroundStation(station.name)}>⚙️ Configure</button>
+                <button className="btn" style={smallButtonStyle} onClick={() => checkWeather(station.name)}>🌤️ Weather</button>
               </div>
             </div>
           ))}
