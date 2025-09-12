@@ -1,9 +1,36 @@
 import React, { useState } from 'react';
+import { showNotification } from '../components/NotificationSystem';
 
 const Analytics = () => {
   const [selectedAlgorithm, setSelectedAlgorithm] = useState('AI-GNN');
   const [timeRange, setTimeRange] = useState('24h');
   const [analysisMode, setAnalysisMode] = useState('performance');
+
+  // Demo Functions
+  const loadSatellites = () => {
+    showNotification('success', '🛰️ LOADING LIVE SATELLITES', 
+      'Connecting to satellite tracking APIs... | ✅ ISS: Connected | ✅ Hubble: Connected | ✅ GPS-III: Connected | ✅ Starlink: 4 satellites online', 7000);
+  };
+
+  const showClassicalScheduling = () => {
+    showNotification('warning', '📊 CLASSICAL ALGORITHM ANALYSIS', 
+      'Running traditional greedy scheduling... | ⚠️ Found 15 scheduling conflicts | ⚠️ 23% communication windows wasted | ⚠️ Sub-optimal resource allocation detected', 8000);
+  };
+
+  const showAIOptimization = () => {
+    showNotification('success', '🤖 AI OPTIMIZATION ACTIVATED', 
+      'Deep Q-Learning + Graph Neural Network engaged... | ✅ Conflicts resolved in 0.3 seconds | ✅ Optimal resource allocation achieved | ✅ Real-time adaptive scheduling active', 8000);
+  };
+
+  const showMetricsDashboard = () => {
+    showNotification('success', '📊 PERFORMANCE METRICS', 
+      'AI vs Classical Comparison: | 📈 Throughput: +23.4% improvement | ⚡ Latency: -44ms reduction | 🎯 Success Rate: 98.7% vs 75.3% | 💰 Cost Efficiency: +31% savings', 9000);
+  };
+
+  const showGNNVisualization = () => {
+    showNotification('info', '✨ GRAPH NEURAL NETWORK VISUALIZATION', 
+      'Showing AI decision-making process... | 🧠 Attention weights on satellite nodes | ⚡ Critical path highlighting | 🔍 Real-time feature importance | 📊 Network topology analysis', 8000);
+  };
 
   return (
     <div>
@@ -220,23 +247,23 @@ const Analytics = () => {
         <div style={demoFlowStyle}>
           <div style={demoStepStyle}>
             <h4>Step 1: Load Live Satellites</h4>
-            <button className="btn" style={demoButtonStyle}>🛰️ Load ISS, Hubble, GPS, Starlink</button>
+            <button className="btn" style={demoButtonStyle} onClick={loadSatellites}>🛰️ Load ISS, Hubble, GPS, Starlink</button>
           </div>
           <div style={demoStepStyle}>
             <h4>Step 2: Show Classical Scheduling</h4>
-            <button className="btn" style={demoButtonStyle}>📊 Classical Algorithm → Wasted Windows</button>
+            <button className="btn" style={demoButtonStyle} onClick={showClassicalScheduling}>📊 Classical Algorithm → Wasted Windows</button>
           </div>
           <div style={demoStepStyle}>
             <h4>Step 3: Switch to Astraeus AI</h4>
-            <button className="btn" style={demoButtonStyle}>🤖 AI Optimization → Real-time Scheduling</button>
+            <button className="btn" style={demoButtonStyle} onClick={showAIOptimization}>🤖 AI Optimization → Real-time Scheduling</button>
           </div>
           <div style={demoStepStyle}>
             <h4>Step 4: Show Metrics Dashboard</h4>
-            <button className="btn" style={demoButtonStyle}>📊 Throughput +23.4%, Latency -44ms</button>
+            <button className="btn" style={demoButtonStyle} onClick={showMetricsDashboard}>📊 Throughput +23.4%, Latency -44ms</button>
           </div>
           <div style={demoStepStyle}>
             <h4>Step 5: GNN Attention Visualization</h4>
-            <button className="btn" style={demoButtonStyle}>✨ Show AI "Brain" - Glowing Critical Nodes</button>
+            <button className="btn" style={demoButtonStyle} onClick={showGNNVisualization}>✨ Show AI "Brain" - Glowing Critical Nodes</button>
           </div>
         </div>
       </div>
@@ -248,7 +275,7 @@ const Analytics = () => {
           <div style={metricCategoryStyle}>
             <h4>📊 Throughput & Efficiency</h4>
             <div>Throughput: 847 Gb/day (+23.4% vs classical)</div>
-            <div>Antenna Utilization: 87.3% (target: >85%)</div>
+            <div>Antenna Utilization: 87.3% (target: {'>'}85%)</div>
             <div>Network Efficiency: 98.7% (baseline: 75.3%)</div>
           </div>
           <div style={metricCategoryStyle}>
