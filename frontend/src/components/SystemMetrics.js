@@ -30,28 +30,51 @@ const SystemMetrics = () => {
       const [satellites, groundStations, windows] = await Promise.allSettled([
         ApiService.getSatellites(),
         ApiService.getGroundStations(),
-        ApiService.getCommunicationWindows({ duration_hours: 1 })
+        ApiService.getCommunicationWindows({ duration_hours: 6 })
       ]);
 
+      const satelliteCount = satellites.status === 'fulfilled' ? 
+        (satellites.value?.count || satellites.value?.satellites?.length || satellites.value?.length || 0) : 0;
+      const stationCount = groundStations.status === 'fulfilled' ? 
+        (groundStations.value?.count || groundStations.value?.ground_stations?.length || groundStations.value?.length || 0) : 0;
+      const windowCount = windows.status === 'fulfilled' ? 
+        (windows.value?.count || windows.value?.windows?.length || windows.value?.length || 0) : 0;
+
       const newMetrics = {
-        totalSatellites: satellites.status === 'fulfilled' ? satellites.value.length : 0,
-        groundStations: groundStations.status === 'fulfilled' ? groundStations.value.length : 0,
-        activeWindows: windows.status === 'fulfilled' ? (windows.value.windows || []).length : 0,
+        totalSatellites: satelliteCount,
+        groundStations: stationCount,
+        activeWindows: windowCount,
         systemStatus: 'operational',
         apiStatus: 'connected',
         websocketStatus: ApiService.isWebSocketConnected() ? 'connected' : 'disconnected',
         lastUpdate: new Date()
       };
 
+      // Show notifications for status changes
+      if (metrics.apiStatus !== 'connected' && newMetrics.apiStatus === 'connected') {
+        window.showNotification?.('success', '🌐 API Connection Established', '🚀');
+      }
+      if (metrics.websocketStatus !== 'connected' && newMetrics.websocketStatus === 'connected') {
+        window.showNotification?.('success', '⚡ Real-time Stream Active', '🛰️');
+      }
+      if (metrics.systemStatus !== 'operational' && newMetrics.systemStatus === 'operational') {
+        window.showNotification?.('success', '🖥️ Mission Control Online', '✨');
+      }
+
       setMetrics(prev => ({ ...prev, ...newMetrics }));
       
     } catch (error) {
       console.error('Error loading system metrics:', error);
       setError('Failed to load system metrics');
+      
+      // Show error notification
+      window.showNotification?.('error', '⚠️ Connection Lost', '🔴');
+      
       setMetrics(prev => ({ 
         ...prev, 
         systemStatus: 'error',
-        apiStatus: 'error'
+        apiStatus: 'error',
+        lastUpdate: new Date()
       }));
     } finally {
       setIsLoading(false);
@@ -59,6 +82,15 @@ const SystemMetrics = () => {
   };
 
   useEffect(() => {
+    // Show initial connection notifications
+    setTimeout(() => {
+      window.showNotification?.('info', '🚀 Initializing Mission Control...', '⚡');
+    }, 500);
+    
+    setTimeout(() => {
+      window.showNotification?.('success', '🛰️ Satellite Network Online', '🌟');
+    }, 1500);
+    
     // Load initial metrics
     loadMetrics();
 
@@ -67,10 +99,17 @@ const SystemMetrics = () => {
 
     // Set up WebSocket status monitoring
     const wsStatusInterval = setInterval(() => {
-      setMetrics(prev => ({
-        ...prev,
-        websocketStatus: ApiService.isWebSocketConnected() ? 'connected' : 'disconnected'
-      }));
+      const wsConnected = ApiService.isWebSocketConnected();
+      setMetrics(prev => {
+        // Show notification on WebSocket reconnection
+        if (prev.websocketStatus === 'disconnected' && wsConnected) {
+          window.showNotification?.('success', '⚡ WebSocket Reconnected', '🔄');
+        }
+        return {
+          ...prev,
+          websocketStatus: wsConnected ? 'connected' : 'disconnected'
+        };
+      });
     }, 5000); // Every 5 seconds
 
     return () => {
@@ -132,6 +171,8 @@ const SystemMetrics = () => {
         </div>
       )}
 
+
+
       <div className="metrics-grid">
         {/* Core Metrics */}
         <div className="metric-card primary">
@@ -152,67 +193,18 @@ const SystemMetrics = () => {
 
         <div className="metric-card primary">
           <div className="metric-header">
-            <h4>📡 Active Windows</h4>
+            <h4>📡 Communication Windows</h4>
             <span className="metric-value">{metrics.activeWindows}</span>
           </div>
-          <p className="metric-description">Next hour opportunities</p>
-        </div>
-
-        {/* Status Metrics */}
-        <div className="metric-card status">
-          <div className="metric-header">
-            <h4>🖥️ System Status</h4>
-            <span 
-              className="status-indicator"
-              style={{ color: getStatusColor(metrics.systemStatus) }}
-            >
-              {getStatusIcon(metrics.systemStatus)} {metrics.systemStatus}
-            </span>
-          </div>
-        </div>
-
-        <div className="metric-card status">
-          <div className="metric-header">
-            <h4>🌐 API Status</h4>
-            <span 
-              className="status-indicator"
-              style={{ color: getStatusColor(metrics.apiStatus) }}
-            >
-              {getStatusIcon(metrics.apiStatus)} {metrics.apiStatus}
-            </span>
-          </div>
-        </div>
-
-        <div className="metric-card status">
-          <div className="metric-header">
-            <h4>⚡ WebSocket</h4>
-            <span 
-              className="status-indicator"
-              style={{ color: getStatusColor(metrics.websocketStatus) }}
-            >
-              {getStatusIcon(metrics.websocketStatus)} {metrics.websocketStatus}
-            </span>
-          </div>
+          <p className="metric-description">Next 6 hours</p>
         </div>
       </div>
 
-      {/* Additional Info */}
+      {/* Last Updated Only */}
       <div className="metrics-info">
         {metrics.lastUpdate && (
           <p>📅 Last Updated: {metrics.lastUpdate.toLocaleTimeString()}</p>
         )}
-        
-        <div className="system-capabilities">
-          <h4>🚀 System Capabilities</h4>
-          <ul>
-            <li>✅ Real-time satellite tracking</li>
-            <li>✅ Communication window detection</li>
-            <li>✅ Live data streaming via WebSocket</li>
-            <li>✅ REST API for data access</li>
-            <li>✅ Ground station management</li>
-            <li>✅ Orbital simulation engine</li>
-          </ul>
-        </div>
       </div>
     </div>
   );

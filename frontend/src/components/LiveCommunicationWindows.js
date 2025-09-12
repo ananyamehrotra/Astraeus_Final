@@ -24,7 +24,16 @@ const LiveCommunicationWindows = () => {
         min_elevation: 10   // Minimum 10° elevation
       });
       
-      setWindows(windowsData.windows || []);
+      // Remove duplicates based on satellite, station, and start time
+      const uniqueWindows = (windowsData.windows || []).filter((window, index, arr) => {
+        return index === arr.findIndex(w => 
+          w.satellite === window.satellite &&
+          w.station === window.station &&
+          w.start_time === window.start_time
+        );
+      });
+      
+      setWindows(uniqueWindows);
       setLastUpdate(new Date());
       
     } catch (error) {
@@ -55,7 +64,15 @@ const LiveCommunicationWindows = () => {
         ApiService.subscribeToWindows((windowsData) => {
           console.log('Real-time windows data received:', windowsData);
           if (windowsData && Array.isArray(windowsData)) {
-            setWindows(windowsData);
+            // Remove duplicates from real-time data too
+            const uniqueWindows = windowsData.filter((window, index, arr) => {
+              return index === arr.findIndex(w => 
+                w.satellite === window.satellite &&
+                w.station === window.station &&
+                w.start_time === window.start_time
+              );
+            });
+            setWindows(uniqueWindows);
             setLastUpdate(new Date());
           }
         });
@@ -150,7 +167,7 @@ const LiveCommunicationWindows = () => {
             return (
               <div key={index} className={`window-card status-${status}`}>
                 <div className="window-header">
-                  <h4>{window.satellite} ↔ {window.ground_station}</h4>
+                  <h4>{window.satellite || window.satellite_name} ↔ {window.station || window.ground_station}</h4>
                   <div 
                     className="status-badge"
                     style={{ backgroundColor: getStatusColor(status) }}
@@ -167,16 +184,16 @@ const LiveCommunicationWindows = () => {
                   </div>
                   
                   <div className="technical-info">
-                    <p>📐 Max Elevation: {window.max_elevation?.toFixed(1)}°</p>
+                    <p>📐 Max Elevation: {(window.max_elevation_degrees || window.max_elevation || 0).toFixed(1)}°</p>
                     <p>📊 Quality: 
                       <span 
                         style={{ 
-                          color: getQualityColor(window.quality_score),
+                          color: getQualityColor(window.quality_score || 0),
                           fontWeight: 'bold',
                           marginLeft: '5px'
                         }}
                       >
-                        {(window.quality_score * 100).toFixed(0)}%
+                        {((window.quality_score || 0) * 100).toFixed(0)}%
                       </span>
                     </p>
                     {window.azimuth_range && (
