@@ -23,6 +23,14 @@ const LiveSatelliteTracker = () => {
         const initialSatellites = await ApiService.getSatellites();
         console.log('Initial satellites loaded:', initialSatellites);
         
+        if (initialSatellites) {
+          // Handle API response format: {satellites: [...], count: N}
+          const satelliteList = initialSatellites.satellites || initialSatellites;
+          if (satelliteList && satelliteList.length > 0) {
+            setSatellites(satelliteList);
+          }
+        }
+        
         // Connect to WebSocket for real-time updates
         await ApiService.connectWebSocket();
         setIsConnected(true);
@@ -67,6 +75,8 @@ const LiveSatelliteTracker = () => {
 
     initializeConnection();
 
+
+
     // Cleanup on unmount
     return () => {
       ApiService.disconnectWebSocket();
@@ -77,7 +87,12 @@ const LiveSatelliteTracker = () => {
     try {
       setConnectionStatus('refreshing');
       const freshData = await ApiService.getSatellites();
-      setSatellites(freshData);
+      if (freshData) {
+        const satelliteList = freshData.satellites || freshData;
+        if (satelliteList && satelliteList.length > 0) {
+          setSatellites(satelliteList);
+        }
+      }
       setLastUpdate(new Date());
       setConnectionStatus('connected');
     } catch (error) {
