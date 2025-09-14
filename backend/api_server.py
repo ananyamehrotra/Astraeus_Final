@@ -23,6 +23,7 @@ from satellite_tracker import SatelliteTracker, SAMPLE_TLE_DATA, SAMPLE_GROUND_S
 from communication_windows import CommunicationWindowDetector, CommunicationWindow
 from orbital_simulator import SatelliteConstellationSimulator
 from tle_fetcher import TLEFetcher
+from ai_performance import AIPerformanceCalculator
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -34,6 +35,7 @@ socketio = SocketIO(app, cors_allowed_origins="*", logger=True, engineio_logger=
 # Global instances
 simulator = SatelliteConstellationSimulator()
 tle_fetcher = TLEFetcher()
+ai_performance = AIPerformanceCalculator()
 
 # Real-time data broadcasting
 broadcast_active = False
@@ -765,12 +767,26 @@ def run_simulation():
         results = simulator.run_simulation(start_time, duration_hours)
         
         # Convert results to JSON-serializable format
+        def convert_numpy_to_list(obj):
+            """Recursively convert NumPy arrays to Python lists"""
+            import numpy as np
+            if isinstance(obj, np.ndarray):
+                return obj.tolist()
+            elif isinstance(obj, dict):
+                return {key: convert_numpy_to_list(value) for key, value in obj.items()}
+            elif isinstance(obj, list):
+                return [convert_numpy_to_list(item) for item in obj]
+            elif isinstance(obj, (np.integer, np.floating)):
+                return obj.item()
+            else:
+                return obj
+        
         simulation_results = {
             'start_time': start_time.isoformat(),
             'duration_hours': duration_hours,
-            'summary': results.get('summary', {}),
+            'summary': convert_numpy_to_list(results.get('summary', {})),
             'windows': [],
-            'orbital_predictions': results.get('orbital_predictions', {}),
+            'orbital_predictions': convert_numpy_to_list(results.get('orbital_predictions', {})),
             'status': 'success'
         }
         
@@ -808,6 +824,40 @@ def get_astronauts():
     try:
         response = requests.get('http://api.open-notify.org/astros.json', timeout=10)
         return jsonify(response.json())
+    except Exception as e:
+        return jsonify({'error': str(e), 'status': 'error'}), 500
+
+# ==================== AI PERFORMANCE ENDPOINTS ====================
+
+@app.route('/api/ai/performance', methods=['GET'])
+def get_ai_performance():
+    """Get live AI vs Classical performance comparison"""
+    try:
+        # Get current communication windows for analysis
+        start_time = datetime.utcnow()
+        all_windows_dict = simulator.window_detector.find_all_windows(start_time, 6)
+        
+        # Flatten windows for analysis
+        windows = []
+        for pair_key, pair_windows in all_windows_dict.items():
+            for window in pair_windows:
+                windows.append({
+                    'satellite': window.satellite_name,
+                    'station': window.station_name,
+                    'duration_minutes': window.duration_minutes,
+                    'max_elevation_degrees': window.max_elevation,
+                    'quality_score': getattr(window, 'quality_score', 0.0)
+                })
+        
+        # Calculate live performance comparison
+        performance_data = ai_performance.get_live_performance_comparison(windows)
+        
+        return jsonify({
+            'performance_comparison': performance_data,
+            'windows_analyzed': len(windows),
+            'status': 'success'
+        })
+        
     except Exception as e:
         return jsonify({'error': str(e), 'status': 'error'}), 500
 
@@ -1095,6 +1145,7 @@ if __name__ == '__main__':
     print("   • GET  /api/communication-windows")
     print("   • GET  /api/visibility")
     print("   • POST /api/simulation/run")
+    print("   • GET  /api/ai/performance")
     print("   • POST /api/satellites/live-data")
     print("-" * 50)
     print("🌐 WebSocket Events:")

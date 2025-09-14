@@ -136,6 +136,19 @@ class ApiService {
     }
   }
 
+  /**
+   * Get AI performance comparison
+   */
+  async getAIPerformance() {
+    try {
+      const response = await axios.get(`${this.baseURL}/ai/performance`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching AI performance:', error);
+      throw error;
+    }
+  }
+
   // ==================== WebSocket Methods ====================
 
   /**
