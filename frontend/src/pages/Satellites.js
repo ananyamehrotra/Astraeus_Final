@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import ApiService from '../services/api';
+import { showNotification } from '../components/NotificationSystem';
 
 const Satellites = () => {
   const [selectedSatellite, setSelectedSatellite] = useState('ISS');
@@ -52,59 +54,32 @@ const Satellites = () => {
       id: 'ISS',
       name: 'International Space Station',
       status: 'active',
-      altitude: 419,
+      altitude: 408,
       speed: 27600,
       period: 92,
-      power: 85,
+      power: 95,
       thermal: 'nominal',
       dataStorage: 67,
       mission: 'Research & Crew Operations',
       priority: 'high',
-      nextPass: '14:23 UTC'
-    },
-    {
-      id: 'HUBBLE',
-      name: 'Hubble Space Telescope',
-      status: 'active',
-      altitude: 547,
-      speed: 27300,
-      period: 96,
-      power: 92,
-      thermal: 'nominal',
-      dataStorage: 34,
-      mission: 'Deep Space Observation',
-      priority: 'high',
-      nextPass: '16:45 UTC'
+      nextPass: '14:52 UTC'
     },
     {
       id: 'GPS-III',
-      name: 'GPS Block III',
+      name: 'GPS III SV04',
       status: 'active',
       altitude: 20200,
       speed: 14000,
       period: 718,
-      power: 78,
-      thermal: 'nominal',
-      dataStorage: 12,
-      mission: 'Global Navigation',
-      priority: 'normal',
-      nextPass: '18:12 UTC'
-    },
-    {
-      id: 'STARLINK',
-      name: 'Starlink Constellation',
-      status: 'active',
-      altitude: 550,
-      speed: 27000,
-      period: 95,
       power: 88,
       thermal: 'nominal',
-      dataStorage: 45,
-      mission: 'Internet Communications',
-      priority: 'normal',
-      nextPass: '15:30 UTC'
+      dataStorage: 23,
+      mission: 'Global Navigation',
+      priority: 'high',
+      nextPass: '16:23 UTC'
     }
   ];
+
 
   const [groundStations, setGroundStations] = useState([]);
 
@@ -201,10 +176,10 @@ const Satellites = () => {
           </div>
         </div>
         <div style={actionButtonsStyle}>
-          <button className="btn" style={emergencyButtonStyle}>🚨 Emergency Override</button>
-          <button className="btn" style={actionButtonStyle}>📡 Assign Mission</button>
-          <button className="btn" style={actionButtonStyle}>🔧 Schedule Maintenance</button>
-          <button className="btn" style={actionButtonStyle}>📊 Generate Report</button>
+          <button className="btn" style={emergencyButtonStyle} onClick={emergencyOverride}>🚨 Emergency Override</button>
+          <button className="btn" style={actionButtonStyle} onClick={assignMission}>📡 Assign Mission</button>
+          <button className="btn" style={actionButtonStyle} onClick={scheduleMaintenance}>🔧 Schedule Maintenance</button>
+          <button className="btn" style={actionButtonStyle} onClick={generateReport}>📊 Generate Report</button>
         </div>
       </div>
 
@@ -266,9 +241,9 @@ const Satellites = () => {
               </div>
               
               <div style={satelliteActionsStyle}>
-                <button className="btn" style={smallButtonStyle}>📡 Track</button>
-                <button className="btn" style={smallButtonStyle}>📊 Details</button>
-                <button className="btn" style={smallButtonStyle}>⚙️ Configure</button>
+                <button className="btn" style={smallButtonStyle} onClick={() => trackSatellite(satellite.name)}>📡 Track</button>
+                <button className="btn" style={smallButtonStyle} onClick={() => viewDetails(satellite.name)}>📊 Details</button>
+                <button className="btn" style={smallButtonStyle} onClick={() => configureSatellite(satellite.name)}>⚙️ Configure</button>
               </div>
             </div>
           ))}
@@ -406,9 +381,9 @@ const Satellites = () => {
               </div>
               
               <div style={stationActionsStyle}>
-                <button className="btn" style={smallButtonStyle}>📊 Monitor</button>
-                <button className="btn" style={smallButtonStyle}>⚙️ Configure</button>
-                <button className="btn" style={smallButtonStyle}>🌤️ Weather</button>
+                <button className="btn" style={smallButtonStyle} onClick={() => monitorGroundStation(station.name)}>📊 Monitor</button>
+                <button className="btn" style={smallButtonStyle} onClick={() => configureGroundStation(station.name)}>⚙️ Configure</button>
+                <button className="btn" style={smallButtonStyle} onClick={() => checkWeather(station.name)}>🌤️ Weather</button>
               </div>
             </div>
           ))}

@@ -4,23 +4,73 @@
  */
 
 import axios from 'axios';
-import { io } from 'socket.io-client';
-
-const API_BASE_URL = 'http://localhost:5000/api';
-const WEBSOCKET_URL = 'http://localhost:5000';
+import io from 'socket.io-client';
 
 class ApiService {
   constructor() {
-    this.baseURL = API_BASE_URL;
+    this.baseURL = 'http://localhost:5000/api';
     this.socket = null;
-    this.reconnectAttempts = 0;
-    this.maxReconnectAttempts = 5;
   }
 
-  // ==================== REST API Methods ====================
+  // ========================
+  // WebSocket Connection
+  // ========================
 
   /**
-   * Get all tracked satellites
+   * Initialize WebSocket connection for real-time updates
+   */
+  initializeWebSocket() {
+    if (this.socket) {
+      return this.socket;
+    }
+
+    this.socket = io('http://localhost:5000');
+
+    this.socket.on('connect', () => {
+      console.log('✅ Connected to Digital Twin backend');
+    });
+
+    this.socket.on('disconnect', () => {
+      console.log('❌ Disconnected from Digital Twin backend');
+    });
+
+    this.socket.on('error', (error) => {
+      console.error('🔌 WebSocket error:', error);
+    });
+
+    return this.socket;
+  }
+
+  /**
+   * Disconnect WebSocket
+   */
+  disconnectWebSocket() {
+    if (this.socket) {
+      this.socket.disconnect();
+      this.socket = null;
+    }
+  }
+
+  /**
+   * Check if WebSocket is connected
+   */
+  isWebSocketConnected() {
+    return this.socket && this.socket.connected;
+  }
+
+  /**
+   * Alias for initializeWebSocket (backward compatibility)
+   */
+  connectWebSocket() {
+    return this.initializeWebSocket();
+  }
+
+  // ========================
+  // Satellite Endpoints
+  // ========================
+
+  /**
+   * Get all satellites
    */
   async getSatellites() {
     try {
@@ -33,11 +83,27 @@ class ApiService {
   }
 
   /**
-   * Get specific satellite position
+   * Add new satellite to tracking system
    */
-  async getSatellitePosition(satelliteName) {
+  async addSatellite(satelliteData) {
     try {
-      const response = await axios.get(`${this.baseURL}/satellites/${satelliteName}/position`);
+      const response = await axios.post(`${this.baseURL}/satellites`, satelliteData);
+      return response.data;
+    } catch (error) {
+      console.error('Error adding satellite:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get satellite position at specific time
+   */
+  async getSatellitePosition(name, time = null) {
+    try {
+      const url = time 
+        ? `${this.baseURL}/satellites/${name}/position?time=${time}`
+        : `${this.baseURL}/satellites/${name}/position`;
+      const response = await axios.get(url);
       return response.data;
     } catch (error) {
       console.error('Error fetching satellite position:', error);
@@ -46,11 +112,13 @@ class ApiService {
   }
 
   /**
-   * Get satellite trajectory over time
+   * Get satellite trajectory
    */
-  async getSatelliteTrajectory(satelliteName, params = {}) {
+  async getSatelliteTrajectory(name, duration = 24, step = 5) {
     try {
-      const response = await axios.get(`${this.baseURL}/satellites/${satelliteName}/trajectory`, { params });
+      const response = await axios.get(
+        `${this.baseURL}/satellites/${name}/trajectory?duration_hours=${duration}&step_minutes=${step}`
+      );
       return response.data;
     } catch (error) {
       console.error('Error fetching satellite trajectory:', error);
@@ -59,17 +127,36 @@ class ApiService {
   }
 
   /**
-   * Get communication windows
+   * Get CZML data for Cesium visualization
    */
-  async getCommunicationWindows(params = {}) {
+  async getCZMLData(duration = 24, step = 5) {
     try {
-      const response = await axios.get(`${this.baseURL}/communication-windows`, { params });
+      const response = await axios.get(
+        `${this.baseURL}/satellites/czml?duration_hours=${duration}&step_minutes=${step}`
+      );
       return response.data;
     } catch (error) {
-      console.error('Error fetching communication windows:', error);
+      console.error('Error fetching CZML data:', error);
       throw error;
     }
   }
+
+  /**
+   * Update live satellite data
+   */
+  async updateLiveData() {
+    try {
+      const response = await axios.post(`${this.baseURL}/satellites/live-data`);
+      return response.data;
+    } catch (error) {
+      console.error('Error updating live data:', error);
+      throw error;
+    }
+  }
+
+  // ========================
+  // Ground Station Endpoints
+  // ========================
 
   /**
    * Get all ground stations
@@ -80,45 +167,6 @@ class ApiService {
       return response.data;
     } catch (error) {
       console.error('Error fetching ground stations:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Check visibility between satellite and ground station
-   */
-  async checkVisibility(params) {
-    try {
-      const response = await axios.get(`${this.baseURL}/visibility`, { params });
-      return response.data;
-    } catch (error) {
-      console.error('Error checking visibility:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Run simulation
-   */
-  async runSimulation(params) {
-    try {
-      const response = await axios.post(`${this.baseURL}/simulation/run`, params);
-      return response.data;
-    } catch (error) {
-      console.error('Error running simulation:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Add new satellite from TLE data
-   */
-  async addSatellite(satelliteData) {
-    try {
-      const response = await axios.post(`${this.baseURL}/satellites`, satelliteData);
-      return response.data;
-    } catch (error) {
-      console.error('Error adding satellite:', error);
       throw error;
     }
   }
@@ -149,192 +197,275 @@ class ApiService {
     }
   }
 
-  // ==================== WebSocket Methods ====================
+  // ========================
+  // Communication Windows
+  // ========================
 
   /**
-   * Connect to WebSocket for real-time updates
+   * Get communication windows
    */
-  connectWebSocket() {
-    if (this.socket && this.socket.connected) {
-      return Promise.resolve();
-    }
-
-    return new Promise((resolve, reject) => {
-      try {
-        console.log('Connecting to Socket.IO server:', WEBSOCKET_URL);
-        this.socket = io(WEBSOCKET_URL, {
-          transports: ['websocket', 'polling'],
-          timeout: 20000,
-        });
-        
-        this.socket.on('connect', () => {
-          console.log('✅ Socket.IO connected successfully');
-          this.reconnectAttempts = 0;
-          resolve();
-        });
-
-        this.socket.on('disconnect', (reason) => {
-          console.log('🔴 Socket.IO disconnected:', reason);
-          if (reason === 'io server disconnect') {
-            // Server disconnected, attempt to reconnect
-            this.attemptReconnect();
-          }
-        });
-
-        this.socket.on('connect_error', (error) => {
-          console.error('❌ Socket.IO connection error:', error);
-          reject(error);
-        });
-
-        // Listen for all possible events from backend
-        this.socket.on('satellite_positions', (data) => {
-          this.handleSocketMessage('satellite_positions', data);
-        });
-
-        this.socket.on('satellite_update', (data) => {
-          this.handleSocketMessage('satellite_update', data);
-        });
-
-        this.socket.on('communication_windows', (data) => {
-          this.handleSocketMessage('communication_windows', data);
-        });
-
-        this.socket.on('window_update', (data) => {
-          this.handleSocketMessage('window_update', data);
-        });
-
-        this.socket.on('server_status', (data) => {
-          this.handleSocketMessage('server_status', data);
-        });
-
-      } catch (error) {
-        reject(error);
+  async getCommunicationWindows(params = {}) {
+    try {
+      // Handle both object params and individual params for backward compatibility
+      let duration, minElevation;
+      
+      if (typeof params === 'object' && params !== null) {
+        duration = params.duration_hours || params.duration || 6;
+        minElevation = params.min_elevation || params.minElevation || 10;
+      } else {
+        // Legacy support for individual parameters
+        duration = arguments[0] || 6;
+        minElevation = arguments[1] || 10;
       }
-    });
-  }
-
-  /**
-   * Attempt to reconnect Socket.IO
-   */
-  attemptReconnect() {
-    if (this.reconnectAttempts < this.maxReconnectAttempts) {
-      this.reconnectAttempts++;
-      const delay = Math.min(1000 * Math.pow(2, this.reconnectAttempts), 30000);
       
-      console.log(`🔄 Reconnecting in ${delay/1000}s (attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts})`);
-      
-      setTimeout(() => {
-        this.connectWebSocket().catch(error => {
-          console.error('Reconnection failed:', error);
-        });
-      }, delay);
-    } else {
-      console.error('❌ Max reconnection attempts reached');
+      const response = await axios.get(
+        `${this.baseURL}/communication-windows?duration_hours=${duration}&min_elevation=${minElevation}`
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching communication windows:', error);
+      throw error;
     }
   }
 
   /**
-   * Handle incoming Socket.IO messages
+   * Get visibility data for satellites
    */
-  handleSocketMessage(event, data) {
-    console.log('📡 Socket.IO message received:', event, data);
-    
-    if (this.callbacks && this.callbacks[event]) {
-      this.callbacks[event].forEach(callback => {
-        try {
-          callback(data);
-        } catch (error) {
-          console.error('Error in Socket.IO callback:', error);
-        }
+  async getVisibility(duration = 24) {
+    try {
+      const response = await axios.get(
+        `${this.baseURL}/visibility?duration_hours=${duration}`
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching visibility data:', error);
+      throw error;
+    }
+  }
+
+  // ========================
+  // Simulation Endpoints
+  // ========================
+
+  /**
+   * Run simulation
+   */
+  async runSimulation(duration = 24, stepMinutes = 5) {
+    try {
+      const response = await axios.post(`${this.baseURL}/simulation/run`, {
+        duration_hours: duration,
+        step_minutes: stepMinutes
       });
+      return response.data;
+    } catch (error) {
+      console.error('Error running simulation:', error);
+      throw error;
+    }
+  }
+
+  // ========================
+  // Emergency & Control Endpoints
+  // ========================
+
+  /**
+   * Activate emergency override mode
+   */
+  async activateEmergency(emergencyType = 'general') {
+    try {
+      const response = await axios.post(`${this.baseURL}/emergency/activate`, {
+        type: emergencyType
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error activating emergency:', error);
+      throw error;
     }
   }
 
   /**
-   * Subscribe to real-time satellite positions
+   * Get current weather conditions for satellite operations
    */
-  subscribeToSatellites(callback) {
-    this.addCallback('satellite_positions', callback);
-    this.addCallback('satellite_update', callback);
-    
-    if (this.socket && this.socket.connected) {
-      this.socket.emit('subscribe_satellites');
+  async getWeatherStatus() {
+    try {
+      const response = await axios.get(`${this.baseURL}/weather/status`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching weather status:', error);
+      throw error;
     }
   }
 
   /**
-   * Subscribe to communication windows updates
+   * Configure satellite parameters
    */
-  subscribeToWindows(callback) {
-    this.addCallback('communication_windows', callback);
-    this.addCallback('window_update', callback);
-    
-    if (this.socket && this.socket.connected) {
-      this.socket.emit('subscribe_windows');
+  async configureSatellite(satelliteName, configType, parameters) {
+    try {
+      const response = await axios.post(`${this.baseURL}/satellites/${satelliteName}/configure`, {
+        config_type: configType,
+        parameters: parameters
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error configuring satellite:', error);
+      throw error;
     }
   }
 
   /**
-   * Subscribe to server status updates
+   * Optimize satellite scheduling
    */
-  subscribeToStatus(callback) {
-    this.addCallback('server_status', callback);
-    this.addCallback('status_update', callback);
-  }
-
-  /**
-   * Add callback for specific Socket.IO event
-   */
-  addCallback(event, callback) {
-    if (!this.callbacks) {
-      this.callbacks = {};
-    }
-    if (!this.callbacks[event]) {
-      this.callbacks[event] = [];
-    }
-    this.callbacks[event].push(callback);
-  }
-
-  /**
-   * Remove callback for specific Socket.IO event
-   */
-  removeCallback(event, callback) {
-    if (this.callbacks && this.callbacks[event]) {
-      this.callbacks[event] = this.callbacks[event].filter(cb => cb !== callback);
+  async optimizeSchedule(criteria = {}) {
+    try {
+      const response = await axios.post(`${this.baseURL}/optimization/schedule`, criteria);
+      return response.data;
+    } catch (error) {
+      console.error('Error optimizing schedule:', error);
+      throw error;
     }
   }
 
   /**
-   * Send message via Socket.IO
+   * Export schedule in various formats
    */
-  sendSocketMessage(event, data = {}) {
-    if (this.socket && this.socket.connected) {
-      this.socket.emit(event, data);
-      console.log('📤 Socket.IO message sent:', { event, data });
-    } else {
-      console.warn('⚠️ Socket.IO not connected, cannot send message:', { event, data });
+  async exportSchedule(format = 'json', timeRange = {}) {
+    try {
+      const response = await axios.get(`${this.baseURL}/schedule/export`, {
+        params: { format, ...timeRange }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error exporting schedule:', error);
+      throw error;
     }
   }
 
   /**
-   * Disconnect Socket.IO
+   * Track specific satellite
    */
-  disconnectWebSocket() {
-    if (this.socket) {
-      this.socket.disconnect();
-      this.socket = null;
-      this.callbacks = {};
-      console.log('🔌 Socket.IO disconnected manually');
+  async trackSatellite(satelliteName, trackingMode = 'auto') {
+    try {
+      const response = await axios.post(`${this.baseURL}/satellites/${satelliteName}/track`, {
+        mode: trackingMode
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error tracking satellite:', error);
+      throw error;
     }
   }
 
   /**
-   * Get Socket.IO connection status
+   * Update system configuration
    */
-  isWebSocketConnected() {
-    return this.socket && this.socket.connected;
+  async updateConfiguration(configData) {
+    try {
+      const response = await axios.post(`${this.baseURL}/config/update`, configData);
+      return response.data;
+    } catch (error) {
+      console.error('Error updating configuration:', error);
+      throw error;
+    }
+  }
+
+  // ========================
+  // Helper Methods
+  // ========================
+
+  /**
+   * Health check endpoint
+   */
+  async healthCheck() {
+    try {
+      const response = await axios.get(`${this.baseURL}/health`);
+      return response.data;
+    } catch (error) {
+      console.error('Error checking health:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get system status
+   */
+  async getSystemStatus() {
+    try {
+      const response = await axios.get(`${this.baseURL}/status`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching system status:', error);
+      throw error;
+    }
+  }
+
+  // ========================
+  // File Operations & Data Management
+  // ========================
+
+  /**
+   * Export schedule data
+   */
+  async exportSchedule(format = 'json', range = '24h') {
+    try {
+      const response = await axios.get(`${this.baseURL}/files/schedules/export`, {
+        params: { format, range }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error exporting schedule:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Import schedule data from file
+   */
+  async importSchedule(file) {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      const response = await axios.post(`${this.baseURL}/files/schedules/import`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error importing schedule:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Export satellite TLE data
+   */
+  async exportSatelliteData(format = 'tle') {
+    try {
+      const response = await axios.get(`${this.baseURL}/files/satellites/export`, {
+        params: { format }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error exporting satellite data:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Generate comprehensive mission report
+   */
+  async generateReport(type = 'summary', period = '24h') {
+    try {
+      const response = await axios.post(`${this.baseURL}/files/reports/generate`, {
+        type, period
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error generating report:', error);
+      throw error;
+    }
   }
 }
 
-// Export singleton instance
-export default new ApiService();
+// Create singleton instance
+const apiService = new ApiService();
+
+export default apiService;

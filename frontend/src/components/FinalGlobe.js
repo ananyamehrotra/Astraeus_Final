@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { showNotification as displayNotification } from './NotificationSystem';
 
 const FinalGlobe = () => {
   const cesiumContainer = useRef(null);
@@ -560,12 +561,12 @@ const FinalGlobe = () => {
                       
                       if (!entity || !entity.position) {
                         console.log('Available entities:', window.cesiumViewer.entities.values.map(e => e.id));
-                        alert('Satellite not found or position unavailable');
+                        displayNotification('warning', 'Satellite Tracking Error', 'Satellite not found or position unavailable', 5000);
                         return;
                       }
                       const frozenPosition = entity.position.getValue(window.cesiumViewer.clock.currentTime);
                       if (!frozenPosition) {
-                        alert('Could not get satellite position');
+                        displayNotification('error', 'Position Error', 'Could not get satellite position', 5000);
                         return;
                       }
                       const frozenCartographic = window.Cesium.Cartographic.fromCartesian(frozenPosition);
@@ -624,7 +625,7 @@ const FinalGlobe = () => {
                       });
                       console.log(`UNLOCKED: Satellite moves relative to Earth`);
                     } else if (mode === 'LOCK' && !selectedSatellite) {
-                      alert('Please click on a satellite first, then click LOCK');
+                      displayNotification('info', 'Select Satellite First', 'Please click on a satellite first, then click LOCK', 4000);
                     } else if (mode === 'AUTO') {
                       if (trackingInterval) {
                         clearInterval(trackingInterval);

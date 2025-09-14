@@ -5,11 +5,11 @@ const Navigation = () => {
   const location = useLocation();
 
   const navItems = [
-    { path: '/', label: 'Dashboard' },
-    { path: '/satellites', label: 'Satellites' },
-    { path: '/schedule', label: 'Schedule' },
-    { path: '/analytics', label: 'Analytics' },
-    { path: '/globe', label: '3D Globe' }
+    { path: '/', label: 'Home', icon: '🏠' },
+    { path: '/dashboard', label: 'Dashboard', icon: '📊' },
+    { path: '/satellites', label: 'Satellites', icon: '🛰️' },
+    { path: '/schedule', label: 'Schedule', icon: '📅' },
+    { path: '/analytics', label: 'Analytics', icon: '📈' }
   ];
 
   return (
@@ -31,6 +31,7 @@ const Navigation = () => {
               ...linkStyle,
               ...(location.pathname === item.path ? activeLinkStyle : {})
             }}>
+            <span style={{marginRight: '0.5rem'}}>{item.icon}</span>
             {item.label}
           </Link>
         ))}
