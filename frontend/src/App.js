@@ -17,12 +17,11 @@ function App() {
       <NotificationSystem />
       <div className="container">
         <Routes>
-          <Route path="/" element={<Globe />} />
-          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/" element={<Dashboard />} />
+          <Route path="/globe" element={<Globe />} />
           <Route path="/satellites" element={<Satellites />} />
           <Route path="/schedule" element={<Schedule />} />
           <Route path="/analytics" element={<Analytics />} />
-          <Route path="/globe" element={<Globe />} />
         </Routes>
       </div>
     </div>

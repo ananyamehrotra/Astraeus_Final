@@ -15,19 +15,67 @@ const Globe = () => {
   const [isLocked, setIsLocked] = useState(false);
   const [showLockIcon, setShowLockIcon] = useState(false);
   const [showLiveNotification, setShowLiveNotification] = useState(false);
+  const [hasError, setHasError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+  
+  // Error boundary
+  if (hasError) {
+    return (
+      <div style={{padding: '20px', textAlign: 'center'}}>
+        <h2>🌍 Globe Visualization</h2>
+        <div style={{background: 'rgba(255,0,0,0.1)', padding: '20px', borderRadius: '10px', margin: '20px 0'}}>
+          <h3>⚠️ Globe Error</h3>
+          <p>The 3D globe visualization encountered an error: {errorMessage}</p>
+          <p>This may be due to CesiumJS not loading properly or browser compatibility issues.</p>
+          <button 
+            className="btn" 
+            onClick={() => {setHasError(false); setErrorMessage(''); setViewMode('2D');}}
+            style={{background: '#4CAF50', padding: '10px 20px', margin: '10px'}}
+          >
+            🔄 Try 2D Mode
+          </button>
+          <button 
+            className="btn" 
+            onClick={() => window.location.reload()}
+            style={{background: '#2196F3', padding: '10px 20px', margin: '10px'}}
+          >
+            🔄 Reload Page
+          </button>
+        </div>
+        <SatelliteMap satellites={satellites} />
+      </div>
+    );
+  }
 
   useEffect(() => {
-    fetchSatellites();
-    if (viewMode === '3D') {
-      initCesium();
+    try {
+      fetchSatellites();
+      if (viewMode === '3D' && window.Cesium) {
+        initCesium();
+      }
+    } catch (error) {
+      console.error('Globe initialization error:', error);
+      setHasError(true);
+      setErrorMessage(error.message || 'Unknown initialization error');
     }
     
     return () => {
-      const existingScale = document.getElementById('scale-display');
-      if (existingScale) existingScale.remove();
-      if (window.cesiumViewer) {
-        window.cesiumViewer.destroy();
-        window.cesiumViewer = null;
+      try {
+        const existingScale = document.getElementById('scale-display');
+        if (existingScale) existingScale.remove();
+        
+        // Properly destroy CesiumJS viewer to prevent WebGL context leaks
+        if (window.cesiumViewer && typeof window.cesiumViewer.destroy === 'function') {
+          try {
+            window.cesiumViewer.destroy();
+          } catch (destroyError) {
+            console.warn('Error destroying Cesium viewer:', destroyError);
+          } finally {
+            window.cesiumViewer = null;
+          }
+        }
+      } catch (cleanupError) {
+        console.warn('Cleanup error:', cleanupError);
       }
     };
   }, [viewMode]);
@@ -38,18 +86,46 @@ const Globe = () => {
       if (response.ok) {
         const data = await response.json();
         setSatellites(data.satellites || []);
+        setStatus('✅ Backend connected');
+      } else {
+        throw new Error('Backend not available');
       }
     } catch (error) {
       console.error('Failed to fetch satellites:', error);
+      setStatus('⚠️ Backend offline - using mock data');
+      // Use mock satellite data when backend is unavailable
+      setSatellites([
+        { name: 'ISS', latitude: 19.41, longitude: -92.00, altitude: 419.05 },
+        { name: 'HUBBLE', latitude: 28.5, longitude: -80.6, altitude: 547.0 },
+        { name: 'STARLINK-1', latitude: 45.2, longitude: 120.1, altitude: 550.0 }
+      ]);
     }
   };
 
   const initCesium = () => {
-    if (!window.Cesium || !cesiumContainer.current || viewMode !== '3D') return;
+    if (!window.Cesium) {
+      setStatus('⚠️ CesiumJS library not loaded');
+      console.warn('CesiumJS library not found. Make sure it is properly loaded.');
+      return;
+    }
+    
+    if (!cesiumContainer.current) {
+      setStatus('⚠️ Container not ready');
+      return;
+    }
+    
+    if (viewMode !== '3D') {
+      return;
+    }
 
     try {
       if (window.cesiumViewer) {
-        window.cesiumViewer.destroy();
+        try {
+          window.cesiumViewer.destroy();
+        } catch (destroyError) {
+          console.warn('Error destroying previous viewer:', destroyError);
+        }
+        window.cesiumViewer = null;
       }
       
       const viewer = new window.Cesium.Viewer(cesiumContainer.current, {
@@ -153,10 +229,17 @@ const Globe = () => {
         destination: window.Cesium.Cartesian3.fromDegrees(77.5946, 12.9716, 8000000)
       });
       
-      // Store viewer globally first
+      // Store viewer globally and wait for it to be fully ready
       window.cesiumViewer = viewer;
       
-      setStatus('CesiumJS Active');
+      // Wait for viewer to be fully initialized
+      setTimeout(() => {
+        if (viewer && viewer.dataSources && viewer.entities) {
+          setStatus('CesiumJS Active');
+        } else {
+          setStatus('CesiumJS initialization incomplete');
+        }
+      }, 1000);
       
       // Add ISRO ground station marker
       viewer.entities.add({
@@ -177,30 +260,55 @@ const Globe = () => {
       });
       
       // Wait for viewer to be fully ready before fetching satellites
-      viewer.scene.globe.tileLoadProgressEvent.addEventListener(() => {
-        if (viewer.scene.globe.tilesLoaded) {
-          fetchCZMLSatellites(viewer);
-        }
-      });
+      if (viewer && viewer.scene && viewer.scene.globe) {
+        viewer.scene.globe.tileLoadProgressEvent.addEventListener(() => {
+          if (viewer.scene.globe.tilesLoaded) {
+            fetchCZMLSatellites(viewer);
+          }
+        });
+      }
       
       // Fallback timeout in case tiles don't load
       setTimeout(() => {
-        if (viewer && viewer.dataSources) {
-          fetchCZMLSatellites(viewer);
-        } else {
+        try {
+          if (viewer && viewer.dataSources && viewer.entities && !viewer.isDestroyed()) {
+            fetchCZMLSatellites(viewer);
+          } else {
+            console.warn('Viewer not ready or destroyed, using mock satellites');
+            addMockSatellites(viewer);
+          }
+        } catch (timeoutError) {
+          console.error('Timeout error:', timeoutError);
           addMockSatellites(viewer);
         }
       }, 3000);
 
     } catch (error) {
-      setStatus('Error: ' + error.message);
+      console.error('CesiumJS initialization error:', error);
+      setStatus('Error: CesiumJS failed to initialize');
+      setHasError(true);
+      setErrorMessage('CesiumJS initialization failed: ' + (error.message || 'Unknown error'));
+      // Fallback to 2D mode
+      setViewMode('2D');
     }
   };
 
   const fetchCZMLSatellites = async (viewer) => {
     try {
-      if (!viewer || !viewer.dataSources) {
-        console.error('Viewer not properly initialized');
+      // Comprehensive viewer validation
+      if (!viewer) {
+        console.error('Viewer is null or undefined');
+        return;
+      }
+      
+      if (viewer.isDestroyed && viewer.isDestroyed()) {
+        console.error('Viewer has been destroyed');
+        return;
+      }
+      
+      if (!viewer.dataSources || !viewer.entities) {
+        console.error('Viewer dataSources or entities not available');
+        addMockSatellites(viewer);
         return;
       }
       
@@ -250,6 +358,13 @@ const Globe = () => {
       setShowNotification(true);
       setTimeout(() => setShowNotification(false), 3000);
       
+      // Set appropriate status message
+      if (error.message && error.message.includes('WebSocket')) {
+        setStatus('⚠️ WebSocket connection failed - using mock data');
+      } else {
+        setStatus('⚠️ Backend unavailable - using mock data');
+      }
+      
       // Use mock satellites as fallback
       if (viewer && viewer.entities) {
         addMockSatellites(viewer);
@@ -260,8 +375,15 @@ const Globe = () => {
   const addMockSatellites = (viewer) => {
     if (!viewer || !viewer.entities) {
       console.error('Viewer not available for mock satellites');
+      setStatus('🎭 Mock satellites - viewer unavailable');
       return;
     }
+    
+    // Clear existing mock satellites first
+    const existingMockSats = viewer.entities.values.filter(entity => 
+      entity.id && entity.id.startsWith('mock-satellite-')
+    );
+    existingMockSats.forEach(entity => viewer.entities.remove(entity));
     
     const mockSats = [
       { name: '🎭 ISS', latitude: 19.41, longitude: -92.00, altitude: 419.05 },
@@ -271,8 +393,9 @@ const Globe = () => {
     ];
     
     mockSats.forEach((sat, index) => {
+      const entityId = `mock-satellite-${index}-${Date.now()}`;
       viewer.entities.add({
-        id: `mock-satellite-${index}`,
+        id: entityId,
         position: window.Cesium.Cartesian3.fromDegrees(sat.longitude, sat.latitude, sat.altitude * 1000),
         point: {
           pixelSize: 15,
@@ -298,12 +421,13 @@ const Globe = () => {
     setIsFullscreen(!isFullscreen);
   };
 
-  return (
-    <div style={isFullscreen ? fullscreenContainerStyle : {}}>
-      {/* Header */}
-      <div style={headerStyle}>
-        <h1 style={titleStyle}>🌍 3D Mission Control</h1>
-      </div>
+  try {
+    return (
+      <div style={isFullscreen ? fullscreenContainerStyle : {}}>
+        {/* Header */}
+        <div style={headerStyle}>
+          <h1 style={titleStyle}>🌍 3D Mission Control</h1>
+        </div>
 
       {/* Visualization Area */}
       <div style={isFullscreen ? fullscreenVisualizationStyle : visualizationStyle}>
@@ -408,11 +532,23 @@ const Globe = () => {
             )}
           </div>
         ) : (
-          <SatelliteMap satellites={satellites} />
+          <div style={{padding: '20px', textAlign: 'center'}}>
+            <h3>🌍 2D Satellite View</h3>
+            <SatelliteMap satellites={satellites} />
+            <div style={{marginTop: '20px', fontSize: '14px', color: '#888'}}>
+              Status: {status}
+            </div>
+          </div>
         )}
       </div>
     </div>
-  );
+    );
+  } catch (renderError) {
+    console.error('Globe render error:', renderError);
+    setHasError(true);
+    setErrorMessage(renderError.message || 'Render error occurred');
+    return null;
+  }
 };
 
 // 2D Satellite Map Component

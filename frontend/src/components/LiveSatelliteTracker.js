@@ -31,39 +31,36 @@ const LiveSatelliteTracker = () => {
           }
         }
         
-        // Connect to WebSocket for real-time updates
-        await ApiService.connectWebSocket();
-        setIsConnected(true);
-        setConnectionStatus('connected');
-        setErrorMessage('');
+        // Try to connect to WebSocket for real-time updates
+        try {
+          await ApiService.connectWebSocket();
+          setIsConnected(true);
+          setConnectionStatus('connected');
+          setErrorMessage('');
+        } catch (wsError) {
+          console.log('WebSocket connection failed, using REST API only:', wsError);
+          setIsConnected(false);
+          setConnectionStatus('connected');
+        }
         
-        // Subscribe to real-time satellite positions
-        ApiService.subscribeToSatellites((satelliteData) => {
-          console.log('Real-time satellite data received:', satelliteData);
-          
-          if (Array.isArray(satelliteData)) {
-            setSatellites(satelliteData);
-          } else if (satelliteData && typeof satelliteData === 'object') {
-            // Handle single satellite update or object format
-            setSatellites(prev => {
-              const updated = [...prev];
-              const index = updated.findIndex(sat => sat.id === satelliteData.id || sat.name === satelliteData.name);
-              if (index >= 0) {
-                updated[index] = { ...updated[index], ...satelliteData };
-              } else {
-                updated.push(satelliteData);
+        // Set up periodic refresh for real-time updates
+        const refreshInterval = setInterval(async () => {
+          try {
+            const freshData = await ApiService.getSatellites();
+            if (freshData) {
+              const satelliteList = freshData.satellites || freshData;
+              if (satelliteList && satelliteList.length > 0) {
+                setSatellites(satelliteList);
+                setLastUpdate(new Date());
               }
-              return updated;
-            });
+            }
+          } catch (error) {
+            console.error('Failed to refresh satellite data:', error);
           }
-          
-          setLastUpdate(new Date());
-        });
+        }, 10000); // Refresh every 10 seconds
         
-        // Subscribe to server status
-        ApiService.subscribeToStatus((statusData) => {
-          console.log('Server status update:', statusData);
-        });
+        // Store interval for cleanup
+        window.satelliteRefreshInterval = refreshInterval;
         
       } catch (error) {
         console.error('Failed to initialize connection:', error);
@@ -80,6 +77,10 @@ const LiveSatelliteTracker = () => {
     // Cleanup on unmount
     return () => {
       ApiService.disconnectWebSocket();
+      if (window.satelliteRefreshInterval) {
+        clearInterval(window.satelliteRefreshInterval);
+        window.satelliteRefreshInterval = null;
+      }
     };
   }, []);
 

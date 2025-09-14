@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import LiveSatelliteTracker from '../components/LiveSatelliteTracker';
 import LiveCommunicationWindows from '../components/LiveCommunicationWindows';
 import SystemMetrics from '../components/SystemMetrics';
+import NotificationSystem from '../components/NotificationSystem';
 
 import ApiService from '../services/api';
 import { showNotification } from '../components/NotificationSystem';
@@ -115,6 +116,15 @@ const Dashboard = () => {
     }
   };
 
+  // Helper function for safe date generation
+  const getSafeISOString = () => {
+    try {
+      return new Date().toISOString();
+    } catch (error) {
+      return new Date(Date.now()).toISOString();
+    }
+  };
+
   // Mission Control Functions
   const startAITraining = async () => {
     setIsTraining(!isTraining);
@@ -123,7 +133,7 @@ const Dashboard = () => {
         // Run actual simulation as "AI training"
         const response = await ApiService.runSimulation({
           duration_hours: 24,
-          start_time: new Date().toISOString()
+          start_time: getSafeISOString()
         });
         showNotification('success', '🤖 AI TRAINING STARTED', 
           `Deep Reinforcement Learning initiated with real satellite data. Processing ${response.summary?.total_satellites || 'N/A'} satellites, found ${response.summary?.total_windows || 'N/A'} communication windows.`, 10000);
@@ -141,7 +151,7 @@ const Dashboard = () => {
     try {
       const response = await ApiService.runSimulation({
         duration_hours: 6,
-        start_time: new Date().toISOString()
+        start_time: getSafeISOString()
       });
       showNotification('success', '🎮 SIMULATION COMPLETE', 
         `Simulated ${response.duration_hours} hours of operations. Tracked ${response.summary?.total_satellites || 0} satellites, found ${response.summary?.total_windows || 0} communication windows. Processing time: ~${Math.round(Math.random() * 30 + 15)} seconds`, 8000);
@@ -238,7 +248,13 @@ const Dashboard = () => {
       const a = document.createElement('a');
       a.style.display = 'none';
       a.href = url;
-      a.download = `mission_report_${new Date().toISOString().split('T')[0]}.json`;
+      a.download = `mission_report_${(() => {
+        try {
+          return new Date().toISOString().split('T')[0];
+        } catch (error) {
+          return 'unknown_date';
+        }
+      })()}.json`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
@@ -624,7 +640,13 @@ const Dashboard = () => {
             <div>Success Rate: {performanceMetrics.successRate}%</div>
             <div>Efficiency: +{performanceMetrics.efficiency}%</div>
             <div style={{fontSize: '12px', color: '#888', marginTop: '5px'}}>
-              Updated: {new Date().toLocaleTimeString()}
+              Updated: {(() => {
+                try {
+                  return new Date().toLocaleTimeString();
+                } catch (error) {
+                  return 'Time unavailable';
+                }
+              })()}
             </div>
           </div>
         </div>

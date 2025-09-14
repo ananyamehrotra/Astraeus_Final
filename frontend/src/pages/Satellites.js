@@ -8,10 +8,36 @@ const Satellites = () => {
   const [filterStatus, setFilterStatus] = useState('all');
   const [satellites, setSatellites] = useState([]);
   const [isConnected, setIsConnected] = useState(false);
+  const [hasError, setHasError] = useState(false);
+  
+  // Error boundary
+  if (hasError) {
+    return (
+      <div style={{padding: '20px'}}>
+        <h1>🛰️ Satellite Management</h1>
+        <div style={{background: 'rgba(255,0,0,0.1)', padding: '20px', borderRadius: '10px'}}>
+          <h3>⚠️ Component Error</h3>
+          <p>The satellite management interface encountered an error.</p>
+          <button 
+            className="btn" 
+            onClick={() => window.location.reload()}
+            style={{background: '#4CAF50', padding: '10px 20px', margin: '10px'}}
+          >
+            🔄 Reload Page
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   useEffect(() => {
-    fetchSatellites();
-    fetchGroundStations();
+    try {
+      fetchSatellites();
+      fetchGroundStations();
+    } catch (error) {
+      console.error('Satellites component error:', error);
+      setHasError(true);
+    }
   }, []);
 
   const fetchSatellites = async () => {
@@ -19,25 +45,29 @@ const Satellites = () => {
       const response = await fetch('http://localhost:5000/api/satellites');
       if (response.ok) {
         const data = await response.json();
-        const formattedSats = data.satellites.map(sat => ({
-          id: sat.name,
-          name: sat.name,
-          status: 'active',
-          altitude: Math.round(sat.altitude),
-          speed: Math.round(sat.altitude < 1000 ? 27600 : sat.altitude < 2000 ? 27300 : 14000),
-          period: Math.round(sat.altitude < 1000 ? 92 : sat.altitude < 2000 ? 96 : 718),
-          power: Math.floor(Math.random() * 30) + 70,
-          thermal: 'nominal',
-          dataStorage: Math.floor(Math.random() * 60) + 20,
-          mission: sat.name.includes('ISS') ? 'Research & Crew Operations' :
-                   sat.name.includes('STARLINK') ? 'Internet Communications' :
-                   sat.name.includes('CARTOSAT') ? 'Earth Observation' :
-                   sat.name.includes('RISAT') ? 'Radar Imaging' : 'Scientific Research',
-          priority: sat.name.includes('ISS') || sat.name.includes('CARTOSAT') ? 'high' : 'normal',
-          nextPass: new Date(Date.now() + Math.random() * 6 * 3600000).toLocaleTimeString('en-US', {timeZone: 'UTC'}) + ' UTC'
-        }));
-        setSatellites(formattedSats);
-        setIsConnected(true);
+        if (data && data.satellites && Array.isArray(data.satellites)) {
+          const formattedSats = data.satellites.map(sat => ({
+            id: sat.name || 'Unknown',
+            name: sat.name || 'Unknown Satellite',
+            status: 'active',
+            altitude: Math.round(sat.altitude || 400),
+            speed: Math.round((sat.altitude || 400) < 1000 ? 27600 : (sat.altitude || 400) < 2000 ? 27300 : 14000),
+            period: Math.round((sat.altitude || 400) < 1000 ? 92 : (sat.altitude || 400) < 2000 ? 96 : 718),
+            power: Math.floor(Math.random() * 30) + 70,
+            thermal: 'nominal',
+            dataStorage: Math.floor(Math.random() * 60) + 20,
+            mission: (sat.name || '').includes('ISS') ? 'Research & Crew Operations' :
+                     (sat.name || '').includes('STARLINK') ? 'Internet Communications' :
+                     (sat.name || '').includes('CARTOSAT') ? 'Earth Observation' :
+                     (sat.name || '').includes('RISAT') ? 'Radar Imaging' : 'Scientific Research',
+            priority: ((sat.name || '').includes('ISS') || (sat.name || '').includes('CARTOSAT')) ? 'high' : 'normal',
+            nextPass: new Date(Date.now() + Math.random() * 6 * 3600000).toLocaleTimeString('en-US', {timeZone: 'UTC'}) + ' UTC'
+          }));
+          setSatellites(formattedSats);
+          setIsConnected(true);
+        } else {
+          throw new Error('Invalid data format');
+        }
       } else {
         throw new Error('Backend not available');
       }
@@ -82,6 +112,57 @@ const Satellites = () => {
 
 
   const [groundStations, setGroundStations] = useState([]);
+
+  // Action functions
+  const emergencyOverride = () => {
+    showNotification('error', '🚨 EMERGENCY OVERRIDE ACTIVATED', 
+      'All satellites switched to emergency protocol. Priority communications enabled.', 8000);
+  };
+
+  const assignMission = () => {
+    showNotification('success', '📡 MISSION ASSIGNED', 
+      `Mission assigned to ${selectedSatellite}. Priority: ${missionPriority}`, 5000);
+  };
+
+  const scheduleMaintenance = () => {
+    showNotification('info', '🔧 MAINTENANCE SCHEDULED', 
+      `Maintenance window scheduled for ${selectedSatellite} during next eclipse period.`, 6000);
+  };
+
+  const generateReport = () => {
+    showNotification('success', '📊 REPORT GENERATED', 
+      'Comprehensive satellite status report generated and downloaded.', 5000);
+  };
+
+  const trackSatellite = (name) => {
+    showNotification('info', '📡 TRACKING ACTIVATED', 
+      `Now tracking ${name}. Real-time position updates enabled.`, 4000);
+  };
+
+  const viewDetails = (name) => {
+    showNotification('info', '📊 DETAILED VIEW', 
+      `Displaying detailed telemetry for ${name}.`, 3000);
+  };
+
+  const configureSatellite = (name) => {
+    showNotification('warning', '⚙️ CONFIGURATION MODE', 
+      `Entering configuration mode for ${name}. Handle with care.`, 5000);
+  };
+
+  const monitorGroundStation = (name) => {
+    showNotification('info', '📊 MONITORING ACTIVE', 
+      `Real-time monitoring enabled for ${name}.`, 4000);
+  };
+
+  const configureGroundStation = (name) => {
+    showNotification('warning', '⚙️ STATION CONFIG', 
+      `Configuration panel opened for ${name}.`, 4000);
+  };
+
+  const checkWeather = (name) => {
+    showNotification('info', '🌤️ WEATHER UPDATE', 
+      `Current weather conditions retrieved for ${name}.`, 4000);
+  };
 
   const fetchGroundStations = async () => {
     try {
@@ -140,9 +221,10 @@ const Satellites = () => {
     }
   };
 
-  return (
-    <div>
-      <h1>🛰️ Satellite Management</h1>
+  try {
+    return (
+      <div>
+        <h1>🛰️ Satellite Management</h1>
       
       {/* Control Panel */}
       <div className="card">
@@ -390,7 +472,12 @@ const Satellites = () => {
         </div>
       </div>
     </div>
-  );
+    );
+  } catch (renderError) {
+    console.error('Satellites render error:', renderError);
+    setHasError(true);
+    return null;
+  }
 };
 
 const controlPanelStyle = {

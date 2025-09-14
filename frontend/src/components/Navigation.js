@@ -5,8 +5,8 @@ const Navigation = () => {
   const location = useLocation();
 
   const navItems = [
-    { path: '/', label: 'Home', icon: '🏠' },
-    { path: '/dashboard', label: 'Dashboard', icon: '📊' },
+    { path: '/', label: 'Dashboard', icon: '🏠' },
+    { path: '/globe', label: '3D Globe', icon: '🌍' },
     { path: '/satellites', label: 'Satellites', icon: '🛰️' },
     { path: '/schedule', label: 'Schedule', icon: '📅' },
     { path: '/analytics', label: 'Analytics', icon: '📈' }
@@ -83,7 +83,6 @@ const linkStyle = {
   gap: '8px',
   background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
   border: '2px solid transparent',
-  backgroundClip: 'padding-box',
   boxShadow: '0 8px 32px rgba(102, 126, 234, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)',
   transition: 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
   fontWeight: '600',
@@ -105,9 +104,9 @@ const activeLinkStyle = {
 const titleStyle = {
   margin: 0,
   color: '#ffffff',
-  background: 'linear-gradient(90deg, transparent 0%, #ffd700 50%, #ff6b6b 70%, #48dbfb 100%)',
-  backgroundClip: 'text',
+  background: 'linear-gradient(90deg, #ffd700 50%, #ff6b6b 70%, #48dbfb 100%)',
   WebkitBackgroundClip: 'text',
+  WebkitTextFillColor: 'transparent',
   animation: 'text-reveal 4s ease-in-out infinite',
   position: 'relative'
 };

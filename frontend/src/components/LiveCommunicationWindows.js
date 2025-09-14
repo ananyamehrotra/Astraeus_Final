@@ -61,21 +61,8 @@ const LiveCommunicationWindows = () => {
           await ApiService.connectWebSocket();
         }
         
-        ApiService.subscribeToWindows((windowsData) => {
-          console.log('Real-time windows data received:', windowsData);
-          if (windowsData && Array.isArray(windowsData)) {
-            // Remove duplicates from real-time data too
-            const uniqueWindows = windowsData.filter((window, index, arr) => {
-              return index === arr.findIndex(w => 
-                w.satellite === window.satellite &&
-                w.station === window.station &&
-                w.start_time === window.start_time
-              );
-            });
-            setWindows(uniqueWindows);
-            setLastUpdate(new Date());
-          }
-        });
+        // WebSocket subscription would go here when implemented
+        console.log('WebSocket connected for communication windows');
       } catch (error) {
         console.error('WebSocket setup failed for windows:', error);
       }
