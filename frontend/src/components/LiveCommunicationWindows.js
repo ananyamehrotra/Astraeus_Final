@@ -109,6 +109,67 @@ const LiveCommunicationWindows = () => {
     return '#F44336';
   };
 
+  const categorized = {
+    past: windows.filter(w => getWindowStatus(w) === 'past'),
+    live: windows.filter(w => getWindowStatus(w) === 'active'),
+    upcoming: windows.filter(w => getWindowStatus(w) === 'upcoming')
+  };
+
+  const Section = ({ title, items, emptyText, barClass }) => (
+    <div className={`windows-section ${barClass}`}>
+      <div className="section-header">
+        <h4>{title}</h4>
+        <span className="count-badge">{items.length}</span>
+      </div>
+      <div className="windows-grid">
+        {items.length > 0 ? (
+          items.map((window, index) => {
+            const status = getWindowStatus(window);
+            const startTime = new Date(window.start_time);
+            const endTime = new Date(window.end_time);
+
+            return (
+              <div key={index} className={`window-card status-${status}`}>
+                <div className="window-header">
+                  <h4>{window.satellite || window.satellite_name} ↔ {window.station || window.ground_station}</h4>
+                  <div 
+                    className="status-badge"
+                    style={{ backgroundColor: getStatusColor(status) }}
+                  >
+                    {status.toUpperCase()}
+                  </div>
+                </div>
+                <div className="window-details">
+                  <div className="time-info">
+                    <p>🕐 Start: {startTime.toLocaleTimeString()}</p>
+                    <p>🕑 End: {endTime.toLocaleTimeString()}</p>
+                    <p>⏱️ Duration: {formatDuration(window.duration_minutes)}</p>
+                  </div>
+                  <div className="technical-info">
+                    <p>📐 Max Elevation: {(window.max_elevation_degrees || window.max_elevation || 0).toFixed(1)}°</p>
+                    <p>📊 Quality:
+                      <span 
+                        style={{ 
+                          color: getQualityColor(window.quality_score || 0),
+                          fontWeight: 'bold',
+                          marginLeft: '5px'
+                        }}
+                      >
+                        {((window.quality_score || 0) * 100).toFixed(0)}%
+                      </span>
+                    </p>
+                  </div>
+                </div>
+              </div>
+            );
+          })
+        ) : (
+          <div className="no-data">{emptyText}</div>
+        )}
+      </div>
+    </div>
+  );
+
   return (
     <div className="live-communication-windows">
       <div className="windows-header">
@@ -144,71 +205,26 @@ const LiveCommunicationWindows = () => {
         </div>
       )}
 
-      <div className="windows-grid">
-        {windows.length > 0 ? (
-          windows.map((window, index) => {
-            const status = getWindowStatus(window);
-            const startTime = new Date(window.start_time);
-            const endTime = new Date(window.end_time);
-            
-            return (
-              <div key={index} className={`window-card status-${status}`}>
-                <div className="window-header">
-                  <h4>{window.satellite || window.satellite_name} ↔ {window.station || window.ground_station}</h4>
-                  <div 
-                    className="status-badge"
-                    style={{ backgroundColor: getStatusColor(status) }}
-                  >
-                    {status.toUpperCase()}
-                  </div>
-                </div>
-                
-                <div className="window-details">
-                  <div className="time-info">
-                    <p>🕐 Start: {startTime.toLocaleTimeString()}</p>
-                    <p>🕑 End: {endTime.toLocaleTimeString()}</p>
-                    <p>⏱️ Duration: {formatDuration(window.duration_minutes)}</p>
-                  </div>
-                  
-                  <div className="technical-info">
-                    <p>📐 Max Elevation: {(window.max_elevation_degrees || window.max_elevation || 0).toFixed(1)}°</p>
-                    <p>📊 Quality: 
-                      <span 
-                        style={{ 
-                          color: getQualityColor(window.quality_score || 0),
-                          fontWeight: 'bold',
-                          marginLeft: '5px'
-                        }}
-                      >
-                        {((window.quality_score || 0) * 100).toFixed(0)}%
-                      </span>
-                    </p>
-                    {window.azimuth_range && (
-                      <p>🧭 Azimuth: {window.azimuth_range.start}° - {window.azimuth_range.end}°</p>
-                    )}
-                  </div>
-                </div>
-                
-                {window.notes && (
-                  <div className="window-notes">
-                    <p>📝 {window.notes}</p>
-                  </div>
-                )}
-              </div>
-            );
-          })
-        ) : (
-          <div className="no-data">
-            {isLoading ? (
-              <div>🔄 Loading communication windows...</div>
-            ) : error ? (
-              <div>❌ Unable to load communication windows</div>
-            ) : (
-              <div>📡 No communication windows found in the next 6 hours</div>
-            )}
-          </div>
-        )}
-      </div>
+      <Section 
+        title="Past Communication Windows"
+        items={categorized.past}
+        emptyText={isLoading ? 'Loading...' : 'No past windows in range'}
+        barClass="bar-past"
+      />
+
+      <Section 
+        title="Live Communication Windows"
+        items={categorized.live}
+        emptyText={isLoading ? 'Loading...' : 'No active windows right now'}
+        barClass="bar-live"
+      />
+
+      <Section 
+        title="Upcoming Communication Windows"
+        items={categorized.upcoming}
+        emptyText={isLoading ? 'Loading...' : 'No upcoming windows found'}
+        barClass="bar-upcoming"
+      />
 
       {windows.length > 0 && (
         <div className="windows-summary">
