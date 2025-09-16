@@ -1,329 +1,266 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 const Globe = () => {
   const cesiumContainer = useRef(null);
-  const [viewMode, setViewMode] = useState('3D');
+  const [status, setStatus] = useState('Loading SINGLE Globe...');
   const [satellites, setSatellites] = useState([]);
-  const [isFullscreen, setIsFullscreen] = useState(false);
-  const [status, setStatus] = useState('Loading Globe...');
-  const [globeId] = useState('GLOBE-' + Date.now());
+  const [globeId] = useState('SINGLE-GLOBE-' + Date.now());
   const [isConnected, setIsConnected] = useState(false);
   const [showNotification, setShowNotification] = useState(false);
+  const [viewMode, setViewMode] = useState('3D');
   const [trackingMode, setTrackingMode] = useState('AUTO');
+  const [scannerActive, setScannerActive] = useState(true);
   const [selectedSatellite, setSelectedSatellite] = useState(null);
   const [trackingInterval, setTrackingInterval] = useState(null);
   const [isLocked, setIsLocked] = useState(false);
   const [showLockIcon, setShowLockIcon] = useState(false);
   const [showLiveNotification, setShowLiveNotification] = useState(false);
-  const [hasError, setHasError] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
-  
-  // Error boundary
-  if (hasError) {
-    return (
-      <div style={{padding: '20px', textAlign: 'center'}}>
-        <h2>🌍 Globe Visualization</h2>
-        <div style={{background: 'rgba(255,0,0,0.1)', padding: '20px', borderRadius: '10px', margin: '20px 0'}}>
-          <h3>⚠️ Globe Error</h3>
-          <p>The 3D globe visualization encountered an error: {errorMessage}</p>
-          <p>This may be due to CesiumJS not loading properly or browser compatibility issues.</p>
-          <button 
-            className="btn" 
-            onClick={() => {setHasError(false); setErrorMessage(''); setViewMode('2D');}}
-            style={{background: '#4CAF50', padding: '10px 20px', margin: '10px'}}
-          >
-            🔄 Try 2D Mode
-          </button>
-          <button 
-            className="btn" 
-            onClick={() => window.location.reload()}
-            style={{background: '#2196F3', padding: '10px 20px', margin: '10px'}}
-          >
-            🔄 Reload Page
-          </button>
-        </div>
-        <SatelliteMap satellites={satellites} />
-      </div>
-    );
+  const [showMenu, setShowMenu] = useState(true);
+
+
+  const toggleFullscreen = () => {
+  if (!cesiumContainer.current) return;
+  const elem = cesiumContainer.current;
+
+  if (!document.fullscreenElement) {
+    elem.requestFullscreen().catch(err => {
+      console.error(`Error attempting fullscreen: ${err.message}`);
+    });
+  } else {
+    document.exitFullscreen();
   }
+};
+
+
 
   useEffect(() => {
-    try {
-      fetchSatellites();
-      if (viewMode === '3D' && window.Cesium) {
-        initCesium();
-      }
-    } catch (error) {
-      console.error('Globe initialization error:', error);
-      setHasError(true);
-      setErrorMessage(error.message || 'Unknown initialization error');
-    }
+    console.log('Initializing SINGLE globe with ID:', globeId);
     
-    return () => {
+    const initCesium = () => {
+      if (!window.Cesium || !cesiumContainer.current) {
+        setTimeout(initCesium, 100);
+        return;
+      }
+
       try {
-        const existingScale = document.getElementById('scale-display');
-        if (existingScale) existingScale.remove();
-        
-        // Properly destroy CesiumJS viewer to prevent WebGL context leaks
-        if (window.cesiumViewer && typeof window.cesiumViewer.destroy === 'function') {
-          try {
-            window.cesiumViewer.destroy();
-          } catch (destroyError) {
-            console.warn('Error destroying Cesium viewer:', destroyError);
-          } finally {
-            window.cesiumViewer = null;
-          }
-        }
-      } catch (cleanupError) {
-        console.warn('Cleanup error:', cleanupError);
-      }
-    };
-  }, [viewMode]);
-
-  const fetchSatellites = async () => {
-    try {
-      const response = await fetch('http://localhost:5000/api/satellites');
-      if (response.ok) {
-        const data = await response.json();
-        setSatellites(data.satellites || []);
-        setStatus('✅ Backend connected');
-      } else {
-        throw new Error('Backend not available');
-      }
-    } catch (error) {
-      console.error('Failed to fetch satellites:', error);
-      setStatus('⚠️ Backend offline - using mock data');
-      // Use mock satellite data when backend is unavailable
-      setSatellites([
-        { name: 'ISS', latitude: 19.41, longitude: -92.00, altitude: 419.05 },
-        { name: 'HUBBLE', latitude: 28.5, longitude: -80.6, altitude: 547.0 },
-        { name: 'STARLINK-1', latitude: 45.2, longitude: 120.1, altitude: 550.0 }
-      ]);
-    }
-  };
-
-  const initCesium = () => {
-    if (!window.Cesium) {
-      setStatus('⚠️ CesiumJS library not loaded');
-      console.warn('CesiumJS library not found. Make sure it is properly loaded.');
-      return;
-    }
-    
-    if (!cesiumContainer.current) {
-      setStatus('⚠️ Container not ready');
-      return;
-    }
-    
-    if (viewMode !== '3D') {
-      return;
-    }
-
-    try {
-      if (window.cesiumViewer) {
-        try {
+        // Destroy any existing viewers first
+        if (window.cesiumViewer) {
           window.cesiumViewer.destroy();
-        } catch (destroyError) {
-          console.warn('Error destroying previous viewer:', destroyError);
-        }
-        window.cesiumViewer = null;
-      }
-      
-      const viewer = new window.Cesium.Viewer(cesiumContainer.current, {
-        imageryProvider: new window.Cesium.ArcGisMapServerImageryProvider({
-          url: 'https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer'
-        }),
-        baseLayerPicker: true,
-        geocoder: true,
-        homeButton: true,
-        sceneModePicker: false,
-        navigationHelpButton: true,
-        fullscreenButton: true,
-        animation: true,
-        timeline: true,
-        creditContainer: document.createElement('div')
-      });
-      
-      viewer.scene.globe.enableLighting = true;
-      viewer.scene.globe.atmosphereLightIntensity = 3.0;
-      viewer.scene.globe.atmosphereSaturationShift = 0.2;
-      
-      // Style CesiumJS controls
-      setTimeout(() => {
-        const toolbar = document.querySelector('.cesium-viewer-toolbar');
-        if (toolbar) {
-          toolbar.style.background = 'linear-gradient(135deg, rgba(0, 255, 255, 0.2), rgba(255, 0, 255, 0.2))';
-          toolbar.style.border = '2px solid #00ffff';
-          toolbar.style.borderRadius = '10px';
-          toolbar.style.backdropFilter = 'blur(10px)';
-          toolbar.style.boxShadow = '0 0 20px rgba(0, 255, 255, 0.3)';
         }
         
-        const bottomToolbar = document.querySelector('.cesium-viewer-bottom');
-        if (bottomToolbar) {
-          bottomToolbar.style.background = 'linear-gradient(135deg, rgba(0, 0, 0, 0.8), rgba(0, 50, 100, 0.8))';
-          bottomToolbar.style.border = '2px solid #00aaff';
-          bottomToolbar.style.borderRadius = '12px';
-          bottomToolbar.style.backdropFilter = 'blur(15px)';
-          bottomToolbar.style.zIndex = '9999';
-          bottomToolbar.style.position = 'relative';
-          bottomToolbar.style.margin = '10px';
-          bottomToolbar.style.boxShadow = '0 0 20px rgba(0, 170, 255, 0.4)';
-        }
-        
-        const animationWidget = document.querySelector('.cesium-animation-widget');
-        if (animationWidget) {
-          animationWidget.style.background = 'linear-gradient(135deg, rgba(0, 0, 0, 0.9), rgba(0, 30, 60, 0.9))';
-          animationWidget.style.border = '2px solid #00aaff';
-          animationWidget.style.borderRadius = '10px';
-          animationWidget.style.margin = '5px';
-          animationWidget.style.boxShadow = '0 0 15px rgba(0, 170, 255, 0.6)';
-        }
-        
-        const timelineWidget = document.querySelector('.cesium-timeline-main');
-        if (timelineWidget) {
-          timelineWidget.style.background = 'linear-gradient(135deg, rgba(0, 0, 0, 0.9), rgba(0, 30, 60, 0.9))';
-          timelineWidget.style.border = '2px solid #00aaff';
-          timelineWidget.style.borderRadius = '8px';
-          timelineWidget.style.boxShadow = '0 0 15px rgba(0, 170, 255, 0.6)';
-        }
-      }, 1000);
+        // Vibrant Earth with ESRI World Imagery
+        const viewer = new window.Cesium.Viewer(cesiumContainer.current, {
+          imageryProvider: new window.Cesium.ArcGisMapServerImageryProvider({
+            url: 'https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer'
+          }),
+          baseLayerPicker: true,
+          geocoder: true,
+          homeButton: true,
+          sceneModePicker: true,
+          navigationHelpButton: true,
+          fullscreenButton: true,
+          animation: true,
+          timeline: true,
+          creditContainer: document.createElement('div')
+        });
 
-      // Add scale display
-      const existingScales = document.querySelectorAll('[id="scale-display"]');
-      existingScales.forEach(scale => scale.remove());
-      
-      const scaleDisplay = document.createElement('div');
-      scaleDisplay.style.position = 'absolute';
-      scaleDisplay.style.bottom = '80px';
-      scaleDisplay.style.right = '20px';
-      scaleDisplay.style.background = 'linear-gradient(135deg, rgba(0, 0, 0, 0.8), rgba(0, 50, 50, 0.8))';
-      scaleDisplay.style.color = '#00ffff';
-      scaleDisplay.style.padding = '12px 16px';
-      scaleDisplay.style.borderRadius = '12px';
-      scaleDisplay.style.fontSize = '13px';
-      scaleDisplay.style.zIndex = '99999';
-      scaleDisplay.style.border = '2px solid #00ffff';
-      scaleDisplay.style.backdropFilter = 'blur(10px)';
-      scaleDisplay.style.fontFamily = 'Consolas, monospace';
-      scaleDisplay.style.boxShadow = '0 0 15px rgba(0, 255, 255, 0.5)';
-      scaleDisplay.style.minWidth = '180px';
-      scaleDisplay.id = 'scale-display';
-      cesiumContainer.current.appendChild(scaleDisplay);
-      
-      viewer.camera.changed.addEventListener(() => {
-        const altitude = viewer.camera.positionCartographic.height;
-        const altitudeKm = (altitude / 1000).toFixed(1);
-        const scale = altitude > 10000000 ? 'Global' : 
-                    altitude > 1000000 ? 'Continental' :
-                    altitude > 100000 ? 'Regional' :
-                    altitude > 10000 ? 'City' : 'Local';
-        scaleDisplay.innerHTML = `
-          <div style="font-weight: bold; color: #ffff00; margin-bottom: 5px;">SCALE INDICATOR</div>
-          <div>Altitude: ${altitudeKm} km</div>
-          <div>Scale: ${scale}</div>
-          <div>Zoom Level: ${Math.round(10 - Math.log10(altitude/1000))}</div>
-        `;
-      });
+        viewer.fullscreenButton.viewModel.fullscreenElement = cesiumContainer.current;
+        
+        
+        // Simple vibrant enhancements
+        viewer.scene.globe.enableLighting = true;
+        viewer.scene.globe.depthTestAgainstTerrain = true;
+        viewer.scene.globe.atmosphereLightIntensity = 3.0;
+        viewer.scene.globe.atmosphereSaturationShift = 0.2;
+        
+        // Move credits to top right
+        setTimeout(() => {
+          const creditContainer = viewer.creditContainer;
+          if (creditContainer) {
+            creditContainer.style.position = 'absolute';
+            creditContainer.style.top = '10px';
+            creditContainer.style.right = '10px';
+            creditContainer.style.bottom = 'auto';
+            creditContainer.style.left = 'auto';
+            creditContainer.style.fontSize = '10px';
+            creditContainer.style.background = 'rgba(0, 0, 0, 0.5)';
+            creditContainer.style.padding = '5px';
+            creditContainer.style.borderRadius = '5px';
+            creditContainer.style.zIndex = '1000';
+          }
+        }, 1000);
+        
+        // Style CesiumJS controls with cyberpunk theme
+        setTimeout(() => {
+          const toolbar = document.querySelector('.cesium-viewer-toolbar');
+          if (toolbar) {
+            toolbar.style.background = 'linear-gradient(135deg, rgba(0, 255, 255, 0.2), rgba(255, 0, 255, 0.2))';
+            toolbar.style.border = '2px solid #00ffff';
+            toolbar.style.borderRadius = '10px';
+            toolbar.style.backdropFilter = 'blur(10px)';
+            toolbar.style.boxShadow = '0 0 20px rgba(0, 255, 255, 0.3)';
+          }
+          
+          const bottomToolbar = document.querySelector('.cesium-viewer-bottom');
+          if (bottomToolbar) {
+            bottomToolbar.style.background = 'linear-gradient(135deg, rgba(0, 255, 255, 0.2), rgba(255, 0, 255, 0.2))';
+            bottomToolbar.style.border = '2px solid #ff00ff';
+            bottomToolbar.style.borderRadius = '10px';
+            bottomToolbar.style.backdropFilter = 'blur(10px)';
+            bottomToolbar.style.zIndex = '9999';
+            bottomToolbar.style.position = 'relative';
+          }
+          
+          // Ensure all CesiumJS buttons are clickable
+          const allButtons = document.querySelectorAll('.cesium-button, .cesium-toolbar-button');
+          allButtons.forEach(btn => {
+            btn.style.zIndex = '9999';
+            btn.style.position = 'relative';
+            btn.style.pointerEvents = 'auto';
+          });
+          
+          // Fix timeline and animation controls
+          const timeline = document.querySelector('.cesium-timeline-main');
+          if (timeline) {
+            timeline.style.zIndex = '9999';
+            timeline.style.position = 'relative';
+          }
+          
+          const animation = document.querySelector('.cesium-animation-widget');
+          if (animation) {
+            animation.style.zIndex = '9999';
+            animation.style.position = 'relative';
+          }
+        }, 1000);
 
-      viewer.camera.flyTo({
-        destination: window.Cesium.Cartesian3.fromDegrees(77.5946, 12.9716, 8000000)
-      });
-      
-      // Store viewer globally and wait for it to be fully ready
-      window.cesiumViewer = viewer;
-      
-      // Wait for viewer to be fully initialized
-      setTimeout(() => {
-        if (viewer && viewer.dataSources && viewer.entities) {
-          setStatus('CesiumJS Active');
-        } else {
-          setStatus('CesiumJS initialization incomplete');
-        }
-      }, 1000);
-      
-      // Add ISRO ground station marker
-      viewer.entities.add({
-        position: window.Cesium.Cartesian3.fromDegrees(77.5946, 12.9716),
-        point: {
-          pixelSize: 15,
-          color: window.Cesium.Color.CYAN,
-          outlineColor: window.Cesium.Color.BLACK,
-          outlineWidth: 2
-        },
-        label: {
-          text: '🚀 ISRO Bangalore',
-          font: '14pt Arial',
-          fillColor: window.Cesium.Color.WHITE,
-          style: window.Cesium.LabelStyle.FILL,
-          pixelOffset: new window.Cesium.Cartesian2(0, -40)
-        }
-      });
-      
-      // Wait for viewer to be fully ready before fetching satellites
-      if (viewer && viewer.scene && viewer.scene.globe) {
-        viewer.scene.globe.tileLoadProgressEvent.addEventListener(() => {
-          if (viewer.scene.globe.tilesLoaded) {
-            fetchCZMLSatellites(viewer);
+        viewer.entities.add({
+          position: window.Cesium.Cartesian3.fromDegrees(77.5946, 12.9716),
+          point: {
+            pixelSize: 15,
+            color: window.Cesium.Color.CYAN,
+            outlineColor: window.Cesium.Color.BLACK,
+            outlineWidth: 2
+          },
+          label: {
+            text: '🚀 ISRO Bangalore',
+            font: '14pt Arial',
+            fillColor: window.Cesium.Color.WHITE,
+            style: window.Cesium.LabelStyle.FILL,
+            pixelOffset: new window.Cesium.Cartesian2(0, -40)
           }
         });
+        viewer.entities.add({
+  name: "Moon",
+  position: Cesium.Cartesian3.fromDegrees(-60, 0, 384400000),
+  ellipsoid: {
+    radii: new Cesium.Cartesian3(1737000, 1737000, 1737000),
+    material: new Cesium.ImageMaterialProperty({
+      image: "https://planetarynames.wr.usgs.gov/images/moon_texture.jpg",
+    }),
+  },
+});
+
+        // Set home view to your location (India region) with good globe visibility
+        viewer.homeButton.viewModel.command.beforeExecute.addEventListener(function(e) {
+          e.cancel = true;
+          viewer.camera.flyTo({
+            destination: window.Cesium.Cartesian3.fromDegrees(77.5946, 12.9716, 8000000),
+            orientation: {
+              heading: 0.0,
+              pitch: -window.Cesium.Math.PI_OVER_TWO,
+              roll: 0.0
+            }
+          });
+        });
+        
+        // Initial view
+        viewer.camera.flyTo({
+          destination: window.Cesium.Cartesian3.fromDegrees(77.5946, 12.9716, 8000000)
+        });
+        
+        // Remove any existing scale displays first
+        const existingScales = document.querySelectorAll('[id="scale-display"]');
+        existingScales.forEach(scale => scale.remove());
+        
+        // Add live scale display
+        const scaleDisplay = document.createElement('div');
+        scaleDisplay.style.position = 'absolute';
+        scaleDisplay.style.bottom = '40px';
+        scaleDisplay.style.left = '1280px';
+        scaleDisplay.style.background = 'linear-gradient(135deg, rgba(48, 42, 42, 0.31), rgba(255, 0, 255, 0.2))';
+        scaleDisplay.style.color = '#00ffff';
+        scaleDisplay.style.padding = '15px';
+        scaleDisplay.style.borderRadius = '15px';
+        scaleDisplay.style.fontSize = '15px';
+        scaleDisplay.style.zIndex = '99999';
+        scaleDisplay.style.border = '2px solid #00ffff';
+        scaleDisplay.style.backdropFilter = 'blur(1px)';
+        scaleDisplay.style.fontFamily = 'Consolas, monospace';
+        scaleDisplay.style.boxShadow = '0 0 20px rgba(0, 0, 0, 1)';
+        scaleDisplay.id = 'scale-display';
+        cesiumContainer.current.appendChild(scaleDisplay);
+        
+        // Update scale display on camera move
+        viewer.camera.changed.addEventListener(() => {
+          const altitude = viewer.camera.positionCartographic.height;
+          const altitudeKm = (altitude / 1000).toFixed(1);
+          const scale = altitude > 10000000 ? 'Global' : 
+                      altitude > 1000000 ? 'Continental' :
+                      altitude > 100000 ? 'Regional' :
+                      altitude > 10000 ? 'City' : 'Local';
+          scaleDisplay.innerHTML = `
+            <div style="font-weight: bold; color: #ffff00; margin-bottom: 5px;">SCALE INDICATOR</div>
+            <div>Altitude: ${altitudeKm} km</div>
+            <div>Scale: ${scale}</div>
+            <div>Zoom Level: ${Math.round(10 - Math.log10(altitude/1000))}</div>
+          `;
+        });
+
+        setStatus('SINGLE CesiumJS Active');
+        fetchSatellites(viewer);
+
+      } catch (error) {
+        setStatus('Error: ' + error.message);
+      }
+    };
+
+    initCesium();
+    
+    return () => {
+      // Clean up scale display
+      const existingScale = document.getElementById('scale-display');
+      if (existingScale) {
+        existingScale.remove();
       }
       
-      // Fallback timeout in case tiles don't load
-      setTimeout(() => {
-        try {
-          if (viewer && viewer.dataSources && viewer.entities && !viewer.isDestroyed()) {
-            fetchCZMLSatellites(viewer);
-          } else {
-            console.warn('Viewer not ready or destroyed, using mock satellites');
-            addMockSatellites(viewer);
-          }
-        } catch (timeoutError) {
-          console.error('Timeout error:', timeoutError);
-          addMockSatellites(viewer);
-        }
-      }, 3000);
+      if (window.cesiumViewer) {
+        window.cesiumViewer.destroy();
+        window.cesiumViewer = null;
+      }
+    };
+  }, []);
 
-    } catch (error) {
-      console.error('CesiumJS initialization error:', error);
-      setStatus('Error: CesiumJS failed to initialize');
-      setHasError(true);
-      setErrorMessage('CesiumJS initialization failed: ' + (error.message || 'Unknown error'));
-      // Fallback to 2D mode
-      setViewMode('2D');
-    }
-  };
-
-  const fetchCZMLSatellites = async (viewer) => {
+  const fetchSatellites = async (viewer) => {
     try {
-      // Comprehensive viewer validation
-      if (!viewer) {
-        console.error('Viewer is null or undefined');
-        return;
-      }
-      
-      if (viewer.isDestroyed && viewer.isDestroyed()) {
-        console.error('Viewer has been destroyed');
-        return;
-      }
-      
-      if (!viewer.dataSources || !viewer.entities) {
-        console.error('Viewer dataSources or entities not available');
-        addMockSatellites(viewer);
-        return;
-      }
-      
+      console.log('Fetching CZML data from backend...');
       const response = await fetch('http://localhost:5000/api/satellites/czml?duration_hours=24&step_minutes=5');
+      console.log('Response status:', response.status);
       
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
       
       const data = await response.json();
+      console.log('CZML data:', data);
       
       if (data.czml && data.czml.length > 1) {
+        // Load CZML data for time-dynamic satellites
         const czmlDataSource = await window.Cesium.CzmlDataSource.load(data.czml);
         if (viewer && viewer.dataSources) {
           viewer.dataSources.add(czmlDataSource);
         }
         
+        // Configure satellites to be clickable
         czmlDataSource.entities.values.forEach(entity => {
           if (entity.point) {
             entity.point.heightReference = window.Cesium.HeightReference.NONE;
@@ -332,6 +269,23 @@ const Globe = () => {
           }
         });
         
+        // Add click handler for satellite selection
+        viewer.cesiumWidget.screenSpaceEventHandler.setInputAction((event) => {
+          const picked = viewer.scene.pick(event.position);
+          if (picked && picked.id && picked.id.id) {
+            setSelectedSatellite(picked.id.id);
+            console.log('Selected satellite:', picked.id.id);
+            // Highlight selected satellite
+            czmlDataSource.entities.values.forEach(entity => {
+              if (entity.point) {
+                entity.point.pixelSize = entity.id === picked.id.id ? 20 : 15;
+                entity.point.outlineWidth = entity.id === picked.id.id ? 3 : 2;
+              }
+            });
+          }
+        }, window.Cesium.ScreenSpaceEventType.LEFT_CLICK);
+        
+        // Set clock to match CZML timeline
         const startTime = window.Cesium.JulianDate.fromIso8601(data.time_range.start + 'Z');
         const endTime = window.Cesium.JulianDate.fromIso8601(data.time_range.end + 'Z');
         
@@ -339,529 +293,419 @@ const Globe = () => {
         viewer.clock.stopTime = endTime;
         viewer.clock.currentTime = startTime;
         viewer.clock.clockRange = window.Cesium.ClockRange.LOOP_STOP;
-        viewer.clock.multiplier = 1;
-        viewer.clock.shouldAnimate = true;
+        viewer.clock.multiplier = 1; // Real-time speed
+        viewer.clock.shouldAnimate = true; // Enable animation
         
+        // Force animation widget to show 1x on startup
+        setTimeout(() => {
+          if (viewer.animation && viewer.animation.viewModel) {
+            viewer.animation.viewModel.multiplier = 1;
+            viewer.animation.viewModel.shuttleRingDragging = false;
+          }
+        }, 1000);
+        
+        // Enable timeline
         viewer.timeline.zoomTo(startTime, endTime);
         
-        setStatus(`✅ LIVE ORBITAL DATA - ${data.satellites_count} satellites`);
-        setIsConnected(true);
-        setShowNotification(true);
-        setTimeout(() => setShowNotification(false), 3000);
+        // Ensure timeline shows 1x speed
+        setTimeout(() => {
+          if (viewer.timeline) {
+            viewer.timeline.updateFromClock();
+          }
+        }, 1500);
         
+        // Store viewer globally for LIVE button access
+        window.cesiumViewer = viewer;
+        
+
+        
+        setSatellites(data.czml.slice(1).map(sat => ({ name: sat.name })));
+        setStatus(`✅ LIVE ORBITAL DATA - ${data.satellites_count} satellites with real trajectories`);
+        
+        // Show connection notification
+        if (!isConnected) {
+          setIsConnected(true);
+          setShowNotification(true);
+          setTimeout(() => setShowNotification(false), 3000);
+        }
+        
+        // Add ISRO marker (static)
+        viewer.entities.add({
+          position: window.Cesium.Cartesian3.fromDegrees(77.5946, 12.9716),
+          point: {
+            pixelSize: 15,
+            color: window.Cesium.Color.CYAN,
+            outlineColor: window.Cesium.Color.BLACK,
+            outlineWidth: 2
+          },
+          label: {
+            text: '🚀 ISRO Bangalore',
+            font: '14pt Arial',
+            fillColor: window.Cesium.Color.WHITE,
+            style: window.Cesium.LabelStyle.FILL,
+            pixelOffset: new window.Cesium.Cartesian2(0, -40)
+          }
+        });
+        
+        console.log(`Total satellites with orbital trajectories: ${data.satellites_count}`);
+        return;
       } else {
-        throw new Error('No CZML data');
+        throw new Error('No CZML data in response');
       }
     } catch (error) {
       console.error('CZML backend connection failed:', error);
-      setIsConnected(false);
-      setShowNotification(true);
-      setTimeout(() => setShowNotification(false), 3000);
       
-      // Set appropriate status message
-      if (error.message && error.message.includes('WebSocket')) {
-        setStatus('⚠️ WebSocket connection failed - using mock data');
-      } else {
-        setStatus('⚠️ Backend unavailable - using mock data');
+      // Show disconnection notification
+      if (isConnected) {
+        setIsConnected(false);
+        setShowNotification(true);
+        setTimeout(() => setShowNotification(false), 3000);
       }
+      const mockSats = [
+        { name: '🎭 ISS', latitude: 19.41, longitude: -92.00, altitude: 419.05 },
+        { name: '🎭 HUBBLE', latitude: 28.5, longitude: -80.6, altitude: 547.0 },
+        { name: '🎭 STARLINK-1', latitude: 45.2, longitude: 120.1, altitude: 550.0 },
+        { name: '🎭 STARLINK-2', latitude: -15.8, longitude: 45.3, altitude: 550.0 },
+        { name: '🎭 GPS-III', latitude: 35.2, longitude: -95.1, altitude: 20200.0 },
+        { name: '🎭 GALILEO', latitude: -25.8, longitude: 28.3, altitude: 23222.0 },
+        { name: '🎭 GLONASS', latitude: 55.2, longitude: 37.6, altitude: 19130.0 },
+        { name: '🎭 BEIDOU', latitude: 39.9, longitude: 116.4, altitude: 21528.0 }
+      ];
       
-      // Use mock satellites as fallback
-      if (viewer && viewer.entities) {
-        addMockSatellites(viewer);
-      }
-    }
-  };
-
-  const addMockSatellites = (viewer) => {
-    if (!viewer || !viewer.entities) {
-      console.error('Viewer not available for mock satellites');
-      setStatus('🎭 Mock satellites - viewer unavailable');
-      return;
-    }
-    
-    // Clear existing mock satellites first
-    const existingMockSats = viewer.entities.values.filter(entity => 
-      entity.id && entity.id.startsWith('mock-satellite-')
-    );
-    existingMockSats.forEach(entity => viewer.entities.remove(entity));
-    
-    const mockSats = [
-      { name: '🎭 ISS', latitude: 19.41, longitude: -92.00, altitude: 419.05 },
-      { name: '🎭 HUBBLE', latitude: 28.5, longitude: -80.6, altitude: 547.0 },
-      { name: '🎭 STARLINK-1', latitude: 45.2, longitude: 120.1, altitude: 550.0 },
-      { name: '🎭 STARLINK-2', latitude: -15.8, longitude: 45.3, altitude: 550.0 }
-    ];
-    
-    mockSats.forEach((sat, index) => {
-      const entityId = `mock-satellite-${index}-${Date.now()}`;
-      viewer.entities.add({
-        id: entityId,
-        position: window.Cesium.Cartesian3.fromDegrees(sat.longitude, sat.latitude, sat.altitude * 1000),
-        point: {
-          pixelSize: 15,
-          color: window.Cesium.Color.YELLOW,
-          outlineColor: window.Cesium.Color.BLACK,
-          outlineWidth: 3,
-          heightReference: window.Cesium.HeightReference.NONE
-        },
-        label: {
-          text: sat.name,
-          font: '14pt Arial',
-          fillColor: window.Cesium.Color.WHITE,
-          style: window.Cesium.LabelStyle.FILL,
-          pixelOffset: new window.Cesium.Cartesian2(0, -40)
-        }
+      setSatellites(mockSats);
+      setStatus(`🎭 Mock - ${mockSats.length} satellites (ISS, Hubble, Starlink, GPS, Galileo, GLONASS, BeiDou)`);
+      
+      mockSats.forEach((sat, index) => {
+        console.log(`Adding mock satellite ${index + 1}:`, sat.name, 'at', sat.latitude, sat.longitude, sat.altitude);
+        viewer.entities.add({
+          id: `mock-satellite-${index}`,
+          position: window.Cesium.Cartesian3.fromDegrees(sat.longitude, sat.latitude, sat.altitude * 1000),
+          point: {
+            pixelSize: 15,
+            color: index === 0 ? window.Cesium.Color.YELLOW : 
+                   index === 1 ? window.Cesium.Color.ORANGE :
+                   index === 2 ? window.Cesium.Color.RED :
+                   window.Cesium.Color.PINK,
+            outlineColor: window.Cesium.Color.BLACK,
+            outlineWidth: 3,
+            heightReference: window.Cesium.HeightReference.NONE
+          },
+          label: {
+            text: sat.name,
+            font: '14pt Arial',
+            fillColor: window.Cesium.Color.WHITE,
+            style: window.Cesium.LabelStyle.FILL,
+            pixelOffset: new window.Cesium.Cartesian2(0, -40),
+            heightReference: window.Cesium.HeightReference.NONE
+          }
+        });
       });
-    });
-    
-    setStatus(`🎭 Mock - ${mockSats.length} satellites`);
+      console.log(`Total mock satellites added: ${mockSats.length}`);
+    }
   };
 
-  const toggleFullscreen = () => {
-    setIsFullscreen(!isFullscreen);
-  };
-
-  try {
-    return (
-      <div style={isFullscreen ? fullscreenContainerStyle : {}}>
-        {/* Header */}
-        <div style={headerStyle}>
-          <h1 style={titleStyle}>🌍 3D Mission Control</h1>
+  return (
+    <div style={{ 
+      width: '100%', 
+      height: '600px', 
+      position: 'relative',
+      background: 'linear-gradient(135deg, #0a0a0a 0%, #1a0033 25%, #330066 50%, #1a0033 75%, #0a0a0a 100%)',
+      border: '3px solid #00ffff',
+      borderRadius: '20px',
+      boxShadow: '0 0 30px #00ffff, inset 0 0 30px rgba(0, 255, 255, 0.1)',
+      overflow: 'hidden'
+    }}>
+      <div 
+        ref={cesiumContainer} 
+        id={globeId}
+        style={{ 
+          width: '100%', 
+          height: '100%',
+          borderRadius: '17px',
+          border: '2px solid rgba(0, 255, 255, 0.3)'
+        }}
+      />
+      
+      {/* Enhanced Spaceship Control Center */}
+      <div style={{
+        position: 'absolute',
+        top: '15px',
+        left: '15px',
+        background: 'linear-gradient(135deg, rgba(255, 255, 255, 0) 0%, rgba(255, 0, 255, 0) 50%, rgba(0, 255, 0, 0) 100%)',
+        backdropFilter: 'blur(2px)',
+        border: '3px solid #00ffff92',
+        color: '#00ffffff',
+        padding: '20px',
+        borderRadius: '20px',
+        fontSize: '15px',
+        zIndex: 1000,
+        fontFamily: 'Consolas, monospace',
+        boxShadow: '0 0 1px rgba(0, 0, 0, 1), inset 0 0 40px rgba(0, 0, 0, 1)',
+        minWidth: '280px',
+        textShadow: '0 0 15px currentColor',
+        animation: 'controlPulse 3s ease-in-out infinite'
+      }}>
+        <div style={{ color: '#ffffffff', fontWeight: 'bold', marginBottom: '12px', fontSize: '18px', textAlign: 'center' }}>
+          ASTRAEUS COMMAND CENTER
         </div>
+        
+        {/* Status Display */}
+<div
+  style={{
+    marginBottom: "15px",
+    padding: "16px",
+    borderRadius: "12px",
+    background: "linear-gradient(145deg, rgba(20,20,20,0.9), rgba(10,10,10,0.7))",
+    boxShadow: "0 0 12px rgba(0, 255, 100, 0.25), inset 0 0 8px rgba(0, 255, 100, 0.15)",
+    border: "1px solid rgba(0,255,100,0.4)",
+    color: "#fff",
+    fontFamily: "Consolas, monospace",
+  }}
+>
+  {/* Satellites Count */}
+  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "6px" }}>
+    <span style={{ color: "#ffe066", fontWeight: "bold" }}>SATELLITES:</span>
+    <span>{satellites.length}</span>
+  </div>
 
-      {/* Visualization Area */}
-      <div style={isFullscreen ? fullscreenVisualizationStyle : visualizationStyle}>
-        {viewMode === '3D' ? (
-          <div style={globeWrapperStyle}>
-            <div 
-              ref={cesiumContainer} 
-              id={globeId}
-              style={cesiumContainerStyle}
-            />
-            
-            {/* Mission Control Panel */}
-            <div style={controlPanelStyle}>
-              <div style={panelHeaderStyle}>
-                ASTRAEUS COMMAND CENTER
-              </div>
-              
-              <div style={statusDisplayStyle}>
-                <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '6px'}}>
-                  <span style={{color: '#ffe066', fontWeight: 'bold'}}>SATELLITES:</span>
-                  <span>{satellites.length}</span>
-                </div>
-                <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '12px'}}>
-                  <span style={{color: '#4dff4d', fontWeight: 'bold'}}>CONNECTION:</span>
-                  <span style={{color: isConnected ? '#00ff90' : '#ff4444', fontWeight: 'bold'}}>
-                    {isConnected ? 'ONLINE' : 'OFFLINE'}
-                  </span>
-                </div>
-              </div>
-              
-              <div style={{marginBottom: '15px'}}>
-                <div style={{display: 'flex', alignItems: 'center', gap: '10px'}}>
-                  <span style={{color: '#ffffff', fontWeight: 'bold', fontSize: '15px'}}>VIEW:</span>
-                  {['3D', '2D', 'CV'].map(mode => (
-                    <button
-                      key={mode}
-                      onClick={() => {
-                        if (window.cesiumViewer && mode !== '2D') {
-                          if (mode === '3D') {
-                            window.cesiumViewer.scene.morphTo3D(2.0);
-                          } else if (mode === 'CV') {
-                            window.cesiumViewer.scene.morphToColumbusView(2.0);
-                          }
-                        }
-                      }}
-                      style={controlButtonStyle}
-                    >
-                      {mode}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              
+  {/* Connection */}
+  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "12px" }}>
+    <span style={{ color: "#4dff4d", fontWeight: "bold" }}>CONNECTION:</span>
+    <span style={{ color: isConnected ? "#00ff90" : "#ff4444", fontWeight: "bold" }}>
+      {isConnected ? "ONLINE" : "OFFLINE"}
+    </span>
+  </div>
+</div>
+      
+        {/* View Controls */}
+        <div style={{ marginBottom: '15px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <span style={{ color: '#ffffffff', fontWeight: 'bold', fontSize: '15px' }}>VIEW MODE:</span>
+            {['3D', '2D', 'CV'].map(mode => (
               <button
+                key={mode}
                 onClick={() => {
-                  if (window.cesiumViewer && window.cesiumViewer.clock) {
-                    const now = new Date();
-                    const julianNow = window.Cesium.JulianDate.fromDate(now);
-                    
-                    window.cesiumViewer.clock.currentTime = julianNow;
-                    window.cesiumViewer.clock.shouldAnimate = true;
-                    window.cesiumViewer.clock.multiplier = 1;
-                    
-                    setShowLiveNotification(true);
-                    setTimeout(() => setShowLiveNotification(false), 3000);
+                  setViewMode(mode);
+                  if (window.cesiumViewer) {
+                    if (mode === '3D') {
+                      window.cesiumViewer.scene.morphTo3D(2.0);
+                      console.log('Switched to 3D view');
+                    } else if (mode === '2D') {
+                      window.cesiumViewer.scene.morphTo2D(2.0);
+                      console.log('Switched to 2D view');
+                    } else if (mode === 'CV') {
+                      window.cesiumViewer.scene.morphToColumbusView(2.0);
+                      console.log('Switched to Columbus view');
+                    }
                   }
                 }}
-                style={liveButtonStyle}
+                style={{
+                  background: viewMode === mode ? 'linear-gradient(45deg, #242924ff, #566861ff)' : 'rgba(0, 255, 255, 0.2)',
+                  border: '1px solid #237474ff',
+                  color: '#ffffffff',
+                  padding: '5px 10px',
+                  borderRadius: '7px',
+                  fontSize: '13px',
+                  cursor: 'pointer',
+                  fontFamily: 'Consolas, monospace',
+                  boxShadow: '0 0 10px rgba(0, 255, 255, 0.3)',
+                  textShadow: '0 0 5px currentColor'
+                }}
               >
-                LIVE MODE
+                {mode}
               </button>
-              
-              <button 
-                style={fullscreenButtonStyle}
-                onClick={toggleFullscreen}
-              >
-                {isFullscreen ? '🗗 EXIT FULLSCREEN' : '🗖 FULLSCREEN'}
-              </button>
-            </div>
-            
-            {/* Corner Accents */}
-            <div style={topRightAccentStyle} />
-            <div style={bottomLeftAccentStyle} />
-            
-            {/* Notifications */}
-            {showNotification && (
-              <div style={{
-                ...notificationStyle,
-                background: isConnected 
-                  ? 'linear-gradient(45deg, #00ff00, #00ff88)' 
-                  : 'linear-gradient(45deg, #ff0000, #ff4444)'
-              }}>
-                {isConnected ? '🟢 BACKEND CONNECTED' : '🔴 BACKEND DISCONNECTED'}
-              </div>
-            )}
-            
-            {showLiveNotification && (
-              <div style={liveNotificationStyle}>
-                🔴 LIVE MODE ACTIVATED<br/>
-                <span style={{fontSize: '12px'}}>Real-time at 1x speed</span>
-              </div>
-            )}
+            ))}
           </div>
-        ) : (
-          <div style={{padding: '20px', textAlign: 'center'}}>
-            <h3>🌍 2D Satellite View</h3>
-            <SatelliteMap satellites={satellites} />
-            <div style={{marginTop: '20px', fontSize: '14px', color: '#888'}}>
-              Status: {status}
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-    );
-  } catch (renderError) {
-    console.error('Globe render error:', renderError);
-    setHasError(true);
-    setErrorMessage(renderError.message || 'Render error occurred');
-    return null;
-  }
-};
+        </div>
 
-// 2D Satellite Map Component
-const SatelliteMap = ({ satellites }) => {
-  return (
-    <div style={mapStyle}>
-      <svg width="100%" height="100%" style={svgStyle}>
-        <rect width="100%" height="100%" fill="#0a0a1a" />
+         {/* ✅ Fullscreen Button */}
+  <button onClick={toggleFullscreen}
+          style={{border: '2px solid #00e1ff',
+                  background: 'linear-gradient(45deg, #43a5c1ff, #00f1bdff)',
+                  color: '#ffffffff',
+                  padding: '8px 100px',
+                  borderRadius: '7px',
+                  fontSize: '15px',
+                  cursor: 'pointer',
+                  fontWeight: 'bold',
+                  fontFamily: 'Consolas, monospace',
+                  boxShadow: '0 0 10px rgba(0, 255, 255, 0.33)',
+                  textShadow: '0 0 5px currentColor',
+                  marginBottom: "10px",
+                  display: "block",
+                  width: "100%" }}
+          >
+            Toggle FullScreen</button>
         
-        {Array.from({length: 19}, (_, i) => (
-          <line 
-            key={`lat-${i}`}
-            x1="0" 
-            y1={`${(i * 100) / 18}%`} 
-            x2="100%" 
-            y2={`${(i * 100) / 18}%`}
-            stroke="rgba(255,255,255,0.1)" 
-            strokeWidth="0.5"
-          />
-        ))}
-        {Array.from({length: 37}, (_, i) => (
-          <line 
-            key={`lon-${i}`}
-            x1={`${(i * 100) / 36}%`} 
-            y1="0" 
-            x2={`${(i * 100) / 36}%`} 
-            y2="100%"
-            stroke="rgba(255,255,255,0.1)" 
-            strokeWidth="0.5"
-          />
-        ))}
         
-        {satellites.map((sat, index) => {
-          const x = ((sat.longitude + 180) / 360) * 100;
-          const y = ((90 - sat.latitude) / 180) * 100;
-          return (
-            <g key={sat.name || index}>
-              <circle
-                cx={`${x}%`}
-                cy={`${y}%`}
-                r="4"
-                fill="#00ff00"
-                stroke="#ffffff"
-                strokeWidth="1"
-              >
-                <animate
-                  attributeName="r"
-                  values="4;6;4"
-                  dur="2s"
-                  repeatCount="indefinite"
-                />
-              </circle>
-              <text
-                x={`${x}%`}
-                y={`${y - 2}%`}
-                fill="#ffffff"
-                fontSize="10"
-                textAnchor="middle"
-                dy="-5"
-              >
-                {sat.name}
-              </text>
-            </g>
-          );
-        })}
         
-        <line 
-          x1="0" 
-          y1="50%" 
-          x2="100%" 
-          y2="50%"
-          stroke="#ffff00" 
-          strokeWidth="2"
-          opacity="0.7"
-        />
-      </svg>
+        {/* LIVE Button */}
+        <div style={{ marginBottom: '10px' }}>
+          <button
+            onClick={() => {
+              if (window.cesiumViewer && window.cesiumViewer.clock) {
+                // Set to current real time
+                const now = new Date();
+                const julianNow = window.Cesium.JulianDate.fromDate(now);
+                
+                // Update clock settings
+                window.cesiumViewer.clock.currentTime = julianNow;
+                window.cesiumViewer.clock.shouldAnimate = true;
+                window.cesiumViewer.clock.multiplier = 1;
+                window.cesiumViewer.clock.clockStep = window.Cesium.ClockStep.SYSTEM_CLOCK_MULTIPLIER;
+                
+                // Update timeline to current time and 1x speed
+                if (window.cesiumViewer.timeline) {
+                  window.cesiumViewer.timeline.updateFromClock();
+                  window.cesiumViewer.timeline.zoomTo(julianNow, window.Cesium.JulianDate.addHours(julianNow, 2, new window.Cesium.JulianDate()));
+                }
+                
+                // Force update animation widget
+                if (window.cesiumViewer.animation) {
+                  window.cesiumViewer.animation.viewModel.multiplier = 1;
+                  window.cesiumViewer.animation.viewModel.shuttleRingDragging = false;
+                }
+                
+                console.log('Switched to LIVE timing at 1x speed at current time:', now.toISOString());
+                
+                // Show LIVE notification
+                setShowLiveNotification(true);
+                setTimeout(() => setShowLiveNotification(false), 3000);
+              }
+            }}
+            style={{
+              background: 'linear-gradient(45deg, #ff0000, #ff4444)',
+              color: 'white',
+              border: '2px solid #ff6666',
+              padding: '8px 15px',
+              borderRadius: '10px',
+              fontSize: '15px',
+              cursor: 'pointer',
+              fontFamily: 'Consolas, monospace',
+              fontWeight: 'bold',
+              width: '100%',
+              boxShadow: '0 0 15px rgba(255, 0, 0, 0.5)',
+              textShadow: '0 0 5px rgba(255, 255, 255, 0.8)'
+            }}
+          >
+            LIVE MODE
+          </button>
+        </div>
+        
+
+      </div>
+      {/* LIVE Mode Notification */}
+      {showLiveNotification && (
+        <div style={{
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          background: 'linear-gradient(45deg, #ff0000, #ff4444)',
+          color: 'white',
+          padding: '15px 25px',
+          borderRadius: '25px',
+          fontSize: '14px',
+          fontWeight: 'bold',
+          zIndex: 10000,
+          boxShadow: '0 0 30px rgba(255, 0, 0, 0.8)',
+          animation: 'pulse 0.5s ease-in-out',
+          textShadow: '0 0 10px rgba(255, 255, 255, 0.8)',
+          textAlign: 'center'
+        }}>
+          🔴 LIVE MODE ACTIVATED<br/>
+          <span style={{fontSize: '12px'}}>Real-time at 1x speed</span>
+        </div>
+      )}
+      
+      {/* Live Connection Notification */}
+      {showNotification && (
+        <div style={{
+          position: 'absolute',
+          top: '20px',
+          right: '20px',
+          background: isConnected 
+            ? 'linear-gradient(45deg, #00ff00, #00ff88)' 
+            : 'linear-gradient(45deg, #ff0000, #ff4444)',
+          color: 'white',
+          padding: '12px 20px',
+          borderRadius: '25px',
+          fontSize: '14px',
+          fontWeight: 'bold',
+          zIndex: 2000,
+          boxShadow: isConnected 
+            ? '0 0 20px #00ff00, 0 0 40px #00ff00' 
+            : '0 0 20px #ff0000, 0 0 40px #ff0000',
+          animation: 'pulse 0.5s ease-in-out',
+          textShadow: '0 0 10px currentColor'
+        }}>
+          {isConnected ? '🟢 BACKEND CONNECTED' : '🔴 BACKEND DISCONNECTED'}
+        </div>
+      )}
+      
+      {/* Neon Corner Accents */}
+      <div style={{
+        position: 'absolute',
+        top: '0',
+        right: '0',
+        width: '60px',
+        height: '60px',
+        background: 'linear-gradient(225deg, transparent 50%, rgba(255, 0, 255, 0.3) 50%)',
+        borderBottomLeft: '3px solid #ff00ff',
+        borderTopRightRadius: '17px',
+        zIndex: 1,
+        pointerEvents: 'none'
+      }} />
+      
+      <div style={{
+        position: 'absolute',
+        bottom: '0',
+        left: '0',
+        width: '60px',
+        height: '60px',
+        background: 'linear-gradient(45deg, transparent 50%, rgba(0, 255, 255, 0.3) 50%)',
+        borderTopRight: '3px solid #00ffff',
+        borderBottomLeftRadius: '17px',
+        zIndex: 1,
+        pointerEvents: 'none'
+      }} />
+      
+      {/* Scanning Lines Effect - Lower z-index */}
+      <div style={{
+        position: 'absolute',
+        top: '0',
+        left: '0',
+        right: '0',
+        bottom: '0',
+        background: 'repeating-linear-gradient(90deg, transparent, transparent 3px, rgba(0, 255, 255, 0.05) 3px, rgba(0, 255, 255, 0.05) 6px)',
+        pointerEvents: 'none',
+        zIndex: -1,
+        borderRadius: '17px'
+      }} />
+      <style>{`
+        @keyframes pulse {
+          0% { transform: scale(1); }
+          50% { transform: scale(1.05); }
+          100% { transform: scale(1); }
+        }
+        @keyframes controlPulse {
+          0% { box-shadow: 0 0 40px rgba(0, 255, 255, 0.6), inset 0 0 40px rgba(255, 0, 255, 0.2); }
+          50% { box-shadow: 0 0 60px rgba(0, 255, 255, 0.8), inset 0 0 60px rgba(255, 0, 255, 0.3); }
+          100% { box-shadow: 0 0 40px rgba(0, 255, 255, 0.6), inset 0 0 40px rgba(255, 0, 255, 0.2); }
+        }
+        @keyframes livePulse {
+          0% { box-shadow: 0 0 30px rgba(255, 0, 0, 0.8), inset 0 0 20px rgba(255, 255, 255, 0.2); }
+          50% { box-shadow: 0 0 50px rgba(255, 0, 0, 1), inset 0 0 30px rgba(255, 255, 255, 0.4); }
+          100% { box-shadow: 0 0 30px rgba(255, 0, 0, 0.8), inset 0 0 20px rgba(255, 255, 255, 0.2); }
+        }
+        @keyframes liveClick {
+          0% { transform: translateY(-50%) scale(1); }
+          50% { transform: translateY(-50%) scale(0.9); }
+          100% { transform: translateY(-50%) scale(1.1); }
+        }
+      `}</style>
     </div>
   );
-};
-
-// Styles
-const fullscreenContainerStyle = {
-  position: 'fixed',
-  top: 0,
-  left: 0,
-  width: '100vw',
-  height: '100vh',
-  background: 'linear-gradient(135deg, #0f0f23 0%, #1a1a3e 100%)',
-  zIndex: 1000,
-  overflow: 'hidden'
-};
-
-const headerStyle = {
-  display: 'flex',
-  justifyContent: 'space-between',
-  alignItems: 'center',
-  padding: '10px 20px',
-  background: 'rgba(255, 255, 255, 0.05)',
-  borderBottom: '1px solid rgba(255, 255, 255, 0.1)'
-};
-
-const titleStyle = {
-  margin: 0,
-  color: '#ffffff',
-  fontSize: '24px'
-};
-
-const controlsStyle = {
-  display: 'flex',
-  gap: '15px',
-  alignItems: 'center'
-};
-
-const toggleContainerStyle = {
-  display: 'flex',
-  background: 'rgba(255, 255, 255, 0.1)',
-  borderRadius: '25px',
-  padding: '2px'
-};
-
-const activeToggleStyle = {
-  padding: '8px 16px',
-  border: 'none',
-  borderRadius: '20px',
-  background: 'linear-gradient(45deg, #667eea, #764ba2)',
-  color: 'white',
-  fontWeight: 'bold',
-  cursor: 'pointer',
-  transition: 'all 0.3s ease'
-};
-
-const inactiveToggleStyle = {
-  padding: '8px 16px',
-  border: 'none',
-  borderRadius: '20px',
-  background: 'transparent',
-  color: 'rgba(255, 255, 255, 0.7)',
-  cursor: 'pointer',
-  transition: 'all 0.3s ease'
-};
-
-const fullscreenButtonStyle = {
-  background: 'linear-gradient(45deg, #00aaff, #0088cc)',
-  color: 'white',
-  border: '2px solid #00aaff',
-  padding: '8px 15px',
-  borderRadius: '10px',
-  fontSize: '14px',
-  cursor: 'pointer',
-  fontFamily: 'Consolas, monospace',
-  fontWeight: 'bold',
-  width: '100%',
-  marginTop: '10px',
-  boxShadow: '0 0 15px rgba(0, 170, 255, 0.5)'
-};
-
-const visualizationStyle = {
-  height: 'calc(100vh - 200px)',
-  padding: '20px'
-};
-
-const fullscreenVisualizationStyle = {
-  height: 'calc(100vh - 80px)',
-  padding: '0'
-};
-
-const globeWrapperStyle = {
-  width: '100%',
-  height: '100%',
-  position: 'relative',
-  background: 'linear-gradient(135deg, #0a0a0a 0%, #1a0033 25%, #330066 50%, #1a0033 75%, #0a0a0a 100%)',
-  border: '3px solid #00ffff',
-  borderRadius: '20px',
-  boxShadow: '0 0 30px #00ffff, inset 0 0 30px rgba(0, 255, 255, 0.1)',
-  overflow: 'hidden'
-};
-
-const cesiumContainerStyle = {
-  width: '100%',
-  height: '100%',
-  borderRadius: '17px',
-  border: '2px solid rgba(0, 255, 255, 0.3)'
-};
-
-const controlPanelStyle = {
-  position: 'absolute',
-  top: '15px',
-  left: '15px',
-  background: 'linear-gradient(135deg, rgba(0, 0, 0, 0.8), rgba(0, 50, 100, 0.8))',
-  backdropFilter: 'blur(10px)',
-  border: '2px solid #00ffff',
-  color: '#ffffff',
-  padding: '20px',
-  borderRadius: '20px',
-  fontSize: '15px',
-  zIndex: 1000,
-  fontFamily: 'Consolas, monospace',
-  boxShadow: '0 0 20px rgba(0, 255, 255, 0.5)',
-  minWidth: '280px'
-};
-
-const panelHeaderStyle = {
-  color: '#ffffff',
-  fontWeight: 'bold',
-  marginBottom: '12px',
-  fontSize: '18px',
-  textAlign: 'center'
-};
-
-const statusDisplayStyle = {
-  marginBottom: '15px',
-  padding: '16px',
-  borderRadius: '12px',
-  background: 'linear-gradient(145deg, rgba(20,20,20,0.9), rgba(10,10,10,0.7))',
-  boxShadow: '0 0 12px rgba(0, 255, 100, 0.25)',
-  border: '1px solid rgba(0,255,100,0.4)',
-  color: '#fff',
-  fontFamily: 'Consolas, monospace'
-};
-
-const controlButtonStyle = {
-  background: 'rgba(0, 255, 255, 0.2)',
-  border: '1px solid #00ffff',
-  color: '#ffffff',
-  padding: '5px 10px',
-  borderRadius: '7px',
-  fontSize: '13px',
-  cursor: 'pointer',
-  fontFamily: 'Consolas, monospace'
-};
-
-const liveButtonStyle = {
-  background: 'linear-gradient(45deg, #ff0000, #ff4444)',
-  color: 'white',
-  border: '2px solid #ff6666',
-  padding: '8px 15px',
-  borderRadius: '10px',
-  fontSize: '15px',
-  cursor: 'pointer',
-  fontFamily: 'Consolas, monospace',
-  fontWeight: 'bold',
-  width: '100%',
-  boxShadow: '0 0 15px rgba(255, 0, 0, 0.5)'
-};
-
-const topRightAccentStyle = {
-  position: 'absolute',
-  top: '0',
-  right: '0',
-  width: '60px',
-  height: '60px',
-  background: 'linear-gradient(225deg, transparent 50%, rgba(255, 0, 255, 0.3) 50%)',
-  borderBottomLeft: '3px solid #ff00ff',
-  borderTopRightRadius: '17px',
-  zIndex: 1,
-  pointerEvents: 'none'
-};
-
-const bottomLeftAccentStyle = {
-  position: 'absolute',
-  bottom: '5px',
-  left: '5px',
-  width: '50px',
-  height: '50px',
-  background: 'linear-gradient(45deg, transparent 50%, rgba(0, 255, 255, 0.4) 50%)',
-  borderTopRight: '2px solid #00ffff',
-  borderBottomLeftRadius: '12px',
-  zIndex: 1000,
-  pointerEvents: 'none',
-  boxShadow: '0 0 10px rgba(0, 255, 255, 0.3)'
-};
-
-const notificationStyle = {
-  position: 'absolute',
-  top: '20px',
-  right: '20px',
-  color: 'white',
-  padding: '12px 20px',
-  borderRadius: '25px',
-  fontSize: '14px',
-  fontWeight: 'bold',
-  zIndex: 2000,
-  animation: 'pulse 0.5s ease-in-out'
-};
-
-const liveNotificationStyle = {
-  position: 'absolute',
-  top: '50%',
-  left: '50%',
-  transform: 'translate(-50%, -50%)',
-  background: 'linear-gradient(45deg, #ff0000, #ff4444)',
-  color: 'white',
-  padding: '15px 25px',
-  borderRadius: '25px',
-  fontSize: '14px',
-  fontWeight: 'bold',
-  zIndex: 10000,
-  boxShadow: '0 0 30px rgba(255, 0, 0, 0.8)',
-  textAlign: 'center'
-};
-
-const mapStyle = {
-  width: '100%',
-  height: '100%',
-  position: 'relative',
-  background: 'rgba(255, 255, 255, 0.02)',
-  borderRadius: '10px',
-  overflow: 'hidden'
-};
-
-const svgStyle = {
-  width: '100%',
-  height: '100%'
 };
 
 export default Globe;

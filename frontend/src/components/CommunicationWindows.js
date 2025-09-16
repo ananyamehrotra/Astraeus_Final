@@ -111,7 +111,7 @@ const windowStyle = {
   padding: '15px',
   borderRadius: '6px',
   marginBottom: '10px',
-  border: '1px solid rgba(255, 255, 255, 0.2)'
+  border: '1px solid rgba(255, 255, 255, 0)'
 };
 
 const headerStyle = {
