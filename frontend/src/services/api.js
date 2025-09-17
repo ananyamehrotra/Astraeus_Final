@@ -197,6 +197,32 @@ class ApiService {
     }
   }
 
+  /**
+   * Optimize schedule using AI model
+   */
+  async optimizeScheduleWithAI(params = {}) {
+    try {
+      const response = await axios.post(`${this.baseURL}/ai/schedule`, params);
+      return response.data;
+    } catch (error) {
+      console.error('Error optimizing schedule with AI:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get AI model information
+   */
+  async getModelInfo() {
+    try {
+      const response = await axios.get(`${this.baseURL}/ai/model-info`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching model info:', error);
+      throw error;
+    }
+  }
+
   // ========================
   // Communication Windows
   // ========================
