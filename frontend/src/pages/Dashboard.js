@@ -309,7 +309,7 @@ const Dashboard = () => {
   return (
     <div>
       <NotificationSystem />
-      <h1>🚀 Mission Control Dashboard</h1>
+      <h1>Mission Control Dashboard</h1>
 
       {/* Real-Time System Metrics */}
       <div className="dashboard-section">
@@ -328,7 +328,7 @@ const Dashboard = () => {
 
       {/* Performance Metrics Dashboard */}
       <div className="card">
-        <h2>📊 Performance Metrics</h2>
+        <h2>Performance Metrics</h2>
         <div style={metricsStyle}>
           <div style={metricStyle}>
             <h3>AI Efficiency Gain <span style={{color: '#ff0000', fontSize: '12px'}}>(M)</span></h3>
@@ -368,7 +368,7 @@ const Dashboard = () => {
 
       {/* AI Training Progress */}
       <div className="card">
-        <h2>🤖 AI Training Monitor <span style={{color: '#ff0000', fontSize: '12px'}}>(M)</span></h2>
+        <h2>AI Training Monitor <span style={{color: '#ff0000', fontSize: '12px'}}>(M)</span></h2>
         <div style={trainingStyle}>
           <div style={progressBarContainer}>
             <div style={progressBarStyle}>
@@ -386,7 +386,7 @@ const Dashboard = () => {
 
       {/* Real-World Scenario Demo */}
       <div className="card">
-        <h2>🔥 Live Crisis Scenario <span style={{color: '#ff0000', fontSize: '12px'}}>(M)</span></h2>
+        <h2>Live Crisis Scenario <span style={{color: '#ff0000', fontSize: '12px'}}>(M)</span></h2>
         <div style={crisisStyle}>
           <div style={crisisHeaderStyle}>
             <h3>🚨 California Wildfire Emergency</h3>
@@ -419,7 +419,7 @@ const Dashboard = () => {
 
       {/* ISRO Constellation Scenario */}
       <div className="card">
-        <h2>🛰️ ISRO Constellation Challenge <span style={{color: '#ff0000', fontSize: '12px'}}>(M)</span></h2>
+        <h2>ISRO Constellation Challenge <span style={{color: '#ff0000', fontSize: '12px'}}>(M)</span></h2>
         <div style={starlinkScenarioStyle}>
           <div style={scenarioHeaderStyle}>
             <h3>Indian Regional Navigation Satellite System (NavIC)</h3>
@@ -503,10 +503,10 @@ const Dashboard = () => {
             </div>
             <div style={selectionMetricsStyle}>
               <h4>AI Selection Criteria:</h4>
-              <div>🎯 Mission Priority: Navigation {'>'} Earth Observation {'>'} Weather</div>
-              <div>⏱️ Pass Duration: {'>'}6 minutes for data download</div>
-              <div>📊 Coverage Area: Indian subcontinent priority</div>
-              <div>🔄 Ground Station Load: Bangalore, Sriharikota, Hassan</div>
+              <div>Mission Priority: Navigation {'>'} Earth Observation {'>'} Weather</div>
+              <div>Pass Duration: {'>'}6 minutes for data download</div>
+              <div>Coverage Area: Indian subcontinent priority</div>
+              <div>Ground Station Load: Bangalore, Sriharikota, Hassan</div>
             </div>
           </div>
         </div>
@@ -514,7 +514,7 @@ const Dashboard = () => {
 
       {/* Mission Control Actions */}
       <div className="card">
-        <h2>🎛️ Mission Control</h2>
+        <h2>Mission Control</h2>
         <div style={controlGridStyle}>
           <button 
             className="btn" 
@@ -528,42 +528,42 @@ const Dashboard = () => {
             style={actionButtonStyle}
             onClick={runSimulation}
           >
-            🎮 Run Simulation
+          Run Simulation
           </button>
           <button 
             className="btn" 
             style={{...actionButtonStyle, background: emergencyMode ? '#ff0000' : '#667eea'}}
             onClick={emergencyOverride}
           >
-            {emergencyMode ? '✅ Emergency Active' : '🚨 Emergency Override'}
+            {emergencyMode ? 'Emergency Active' : '🚨 Emergency Override'}
           </button>
           <button 
             className="btn" 
             style={actionButtonStyle}
             onClick={() => exportSchedule('json')}
           >
-            📄 Export JSON
+          Export JSON
           </button>
           <button 
             className="btn" 
             style={actionButtonStyle}
             onClick={() => exportSchedule('csv')}
           >
-            📊 Export CSV
+          Export CSV
           </button>
           <button 
             className="btn" 
             style={actionButtonStyle}
             onClick={importSchedule}
           >
-            📥 Import Schedule
+            Import Schedule
           </button>
           <button 
             className="btn" 
             style={actionButtonStyle}
             onClick={generateReport}
           >
-            📋 Generate Report
+            Generate Report
           </button>
           <button 
             className="btn" 
@@ -584,10 +584,10 @@ const Dashboard = () => {
 
       {/* Quick Status */}
       <div className="card">
-        <h2>⚡ Quick Status</h2>
+        <h2>Quick Status</h2>
         <div style={statusGridStyle}>
-          <div style={statusCardStyle}>
-            <h4>🛰️ Satellites <span style={{color: '#00ff00', fontSize: '10px'}}>(R)</span></h4>
+          <div style={statusCardStyle} className="status-card">
+            <h4>Satellites <span style={{color: '#00ff00', fontSize: '10px'}}>(R)</span></h4>
             {satellites.length > 0 ? (
               satellites.slice(0, 4).map(sat => (
                 <div key={sat.name}>
@@ -605,8 +605,8 @@ const Dashboard = () => {
               </div>
             )}
           </div>
-          <div style={statusCardStyle}>
-            <h4>🌍 Ground Stations <span style={{color: '#00ff00', fontSize: '10px'}}>(R)</span></h4>
+          <div style={statusCardStyle} className="status-card">
+            <h4>Ground Stations <span style={{color: '#00ff00', fontSize: '10px'}}>(R)</span></h4>
             {groundStations.length > 0 ? (
               groundStations.slice(0, 3).map(station => (
                 <div key={station.name}>
@@ -624,8 +624,8 @@ const Dashboard = () => {
               </div>
             )}
           </div>
-          <div style={statusCardStyle}>
-            <h4>📊 Performance <span style={{color: '#00ff00', fontSize: '10px'}}>(R)</span></h4>
+          <div style={statusCardStyle} className="status-card">
+            <h4> Performance <span style={{color: '#00ff00', fontSize: '10px'}}>(R)</span></h4>
             <div>Latency: {performanceMetrics.latency}ms</div>
             <div>Success Rate: {performanceMetrics.successRate}%</div>
             <div>Efficiency: +{performanceMetrics.efficiency}%</div>
