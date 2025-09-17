@@ -340,16 +340,6 @@ const Dashboard = () => {
             <div style={numberStyle}>{Math.round(Math.random() * 200 + 650)} Mbps</div>
             <small>Current Data Rate</small>
           </div>
-          <div style={metricStyle}>
-            <h3>Satellites Active <span style={{color: '#00ff00', fontSize: '12px'}}>(R)</span></h3>
-            <div style={numberStyle}>5/5</div>
-            <small>All Systems Online</small>
-          </div>
-          <div style={metricStyle}>
-            <h3>Communication Windows <span style={{color: '#00ff00', fontSize: '12px'}}>(R)</span></h3>
-            <div style={numberStyle}>14</div>
-            <small>Next 6 Hours</small>
-          </div>
         </div>
       </div>
 

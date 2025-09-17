@@ -11,8 +11,21 @@ const FinalGlobe = () => {
   const [isConnected, setIsConnected] = useState(false);
   const [showNotification, setShowNotification] = useState(false);
   const [viewMode, setViewMode] = useState('3D');
-  const [trackingMode, setTrackingMode] = useState('AUTO');
+  const [trackingMode, setTrackingMode] = useState('LIVE');
   const [scannerActive, setScannerActive] = useState(true);
+
+  // Initialize live mode on component mount
+  useEffect(() => {
+    if (trackingMode === 'LIVE') {
+      const v = window.cesiumViewer || viewerRef.current;
+      if (v?.camera) {
+        v.camera.flyTo({
+          destination: window.Cesium.Cartesian3.fromDegrees(77.5946, 12.9716, 8000000),
+          duration: 2.0
+        });
+      }
+    }
+  }, [trackingMode]);
   const [selectedSatellite, setSelectedSatellite] = useState(null);
   const [trackingInterval, setTrackingInterval] = useState(null);
   const [isLocked, setIsLocked] = useState(false);
@@ -645,7 +658,7 @@ const FinalGlobe = () => {
         <div style={{ marginBottom: '15px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <span style={{ color: '#ffffffff', fontWeight: 'bold', fontSize: '15px' }}>TRACK:</span>
-            {['AUTO', 'MANUAL', 'LOCK'].map(mode => (
+            {['LIVE', 'MANUAL', 'LOCK'].map(mode => (
               <button
                 key={mode}
                 onClick={() => {
@@ -752,7 +765,7 @@ const FinalGlobe = () => {
                     console.log('UNLOCKED: Satellite moves relative to Earth');
                   } else if (mode === 'LOCK' && !selectedSatellite) {
                     displayNotification('info', 'Select Satellite First', 'Please click on a satellite first, then click LOCK', 4000);
-                  } else if (mode === 'AUTO') {
+                  } else if (mode === 'LIVE') {
                     if (trackingInterval) {
                       clearInterval(trackingInterval);
                       setTrackingInterval(null);
@@ -766,7 +779,7 @@ const FinalGlobe = () => {
                         duration: 2.0
                       });
                     }
-                    console.log('Auto mode: Returned to India view');
+                    console.log('Live mode: Free camera control with live updates');
                   } else if (mode === 'MANUAL') {
                     if (trackingInterval) {
                       clearInterval(trackingInterval);
