@@ -1,10 +1,16 @@
 import React, { useEffect, useRef, useState } from 'react';
 
+// Global lock to prevent multiple Cesium viewers
+window.CESIUM_GLOBE_LOCK = window.CESIUM_GLOBE_LOCK || false;
+
 const Globe = () => {
   const cesiumContainer = useRef(null);
+  const viewerRef = useRef(null);
+  const initializingRef = useRef(false);
+  const mountedRef = useRef(true);
   const [status, setStatus] = useState('Loading SINGLE Globe...');
   const [satellites, setSatellites] = useState([]);
-  const [globeId] = useState('SINGLE-GLOBE-' + Date.now());
+  const [globeId] = useState('SINGLE-GLOBE-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9));
   const [isConnected, setIsConnected] = useState(false);
   const [showNotification, setShowNotification] = useState(false);
   const [viewMode, setViewMode] = useState('3D');
@@ -36,16 +42,41 @@ const Globe = () => {
   useEffect(() => {
     console.log('Initializing SINGLE globe with ID:', globeId);
     
+    // Prevent multiple initializations with global lock
+    if (window.CESIUM_GLOBE_LOCK || window.cesiumViewer || viewerRef.current || initializingRef.current) {
+      console.log('Cesium already initialized or locked, skipping...');
+      return;
+    }
+    
+    window.CESIUM_GLOBE_LOCK = true;
+    
     const initCesium = () => {
-      if (!window.Cesium || !cesiumContainer.current) {
-        setTimeout(initCesium, 100);
+      if (!window.Cesium || !cesiumContainer.current || initializingRef.current || !mountedRef.current) {
+        if (!initializingRef.current && mountedRef.current) {
+          setTimeout(initCesium, 100);
+        }
         return;
       }
+
+      initializingRef.current = true;
 
       try {
         // Destroy any existing viewers first
         if (window.cesiumViewer) {
-          window.cesiumViewer.destroy();
+          try {
+            window.cesiumViewer.destroy();
+          } catch (e) {
+            console.warn('Error destroying previous viewer:', e);
+          }
+          window.cesiumViewer = null;
+        }
+        if (viewerRef.current) {
+          try {
+            viewerRef.current.destroy();
+          } catch (e) {
+            console.warn('Error destroying ref viewer:', e);
+          }
+          viewerRef.current = null;
         }
         
         // Vibrant Earth with ESRI World Imagery
@@ -150,15 +181,15 @@ const Globe = () => {
           }
         });
         viewer.entities.add({
-  name: "Moon",
-  position: Cesium.Cartesian3.fromDegrees(-60, 0, 384400000),
-  ellipsoid: {
-    radii: new Cesium.Cartesian3(1737000, 1737000, 1737000),
-    material: new Cesium.ImageMaterialProperty({
-      image: "https://planetarynames.wr.usgs.gov/images/moon_texture.jpg",
-    }),
-  },
-});
+          name: "Moon",
+          position: window.Cesium.Cartesian3.fromDegrees(-60, 0, 384400000),
+          ellipsoid: {
+            radii: new window.Cesium.Cartesian3(1737000, 1737000, 1737000),
+            material: new window.Cesium.ImageMaterialProperty({
+              image: "https://planetarynames.wr.usgs.gov/images/moon_texture.jpg",
+            }),
+          },
+        });
 
         // Set home view to your location (India region) with good globe visibility
         viewer.homeButton.viewModel.command.beforeExecute.addEventListener(function(e) {
@@ -220,23 +251,51 @@ const Globe = () => {
         fetchSatellites(viewer);
 
       } catch (error) {
+        console.error('Error initializing Cesium:', error);
         setStatus('Error: ' + error.message);
+        initializingRef.current = false;
       }
     };
 
     initCesium();
     
     return () => {
+      console.log('Cleaning up Globe component:', globeId);
+      mountedRef.current = false;
+      
       // Clean up scale display
       const existingScale = document.getElementById('scale-display');
       if (existingScale) {
         existingScale.remove();
       }
       
+      // Clean up tracking interval
+      if (trackingInterval) {
+        clearInterval(trackingInterval);
+      }
+      
+      // Properly destroy viewer
+      initializingRef.current = false;
+      window.CESIUM_GLOBE_LOCK = false;
+      
+      if (viewerRef.current) {
+        try {
+          viewerRef.current.destroy();
+        } catch (e) {
+          console.warn('Error destroying ref viewer on cleanup:', e);
+        }
+        viewerRef.current = null;
+      }
       if (window.cesiumViewer) {
-        window.cesiumViewer.destroy();
+        try {
+          window.cesiumViewer.destroy();
+        } catch (e) {
+          console.warn('Error destroying global viewer on cleanup:', e);
+        }
         window.cesiumViewer = null;
       }
+      
+      console.log('🧹 Globe cleanup completed:', globeId);
     };
   }, []);
 
@@ -316,6 +375,10 @@ const Globe = () => {
         
         // Store viewer globally for LIVE button access
         window.cesiumViewer = viewer;
+        viewerRef.current = viewer;
+        initializingRef.current = false;
+        
+        console.log('✅ Cesium Globe initialized successfully:', globeId);
         
 
         
