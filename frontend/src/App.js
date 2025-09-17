@@ -17,8 +17,9 @@ function App() {
       <NotificationSystem />
       <div className="container">
         <Routes>
-          <Route path="/" element={<Dashboard />} />
+          <Route path="/" element={<Globe />} />
           <Route path="/globe" element={<Globe />} />
+          <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/satellites" element={<Satellites />} />
           <Route path="/schedule" element={<Schedule />} />
           <Route path="/analytics" element={<Analytics />} />

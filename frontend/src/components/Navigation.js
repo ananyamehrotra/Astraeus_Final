@@ -5,8 +5,8 @@ const Navigation = () => {
   const location = useLocation();
 
   const navItems = [
-    { path: '/', label: 'Dashboard', icon: '🏠' },
-    { path: '/globe', label: '3D Globe', icon: '🌍' },
+    { path: '/', label: '3D Globe', icon: '�' },
+    { path: '/dashboard', label: 'Dashboard', icon: '�' },
     { path: '/satellites', label: 'Satellites', icon: '🛰️' },
     { path: '/schedule', label: 'Schedule', icon: '📅' },
     { path: '/analytics', label: 'Analytics', icon: '📈' }
