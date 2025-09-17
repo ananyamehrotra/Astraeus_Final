@@ -361,7 +361,7 @@ training_scenarios = data_generator.generate_training_dataset(num_scenarios=500)
 
 # Train the model
 print("\nStep 2: Training DRL agent...")
-trained_model = train_satellite_scheduler(training_scenarios, total_timesteps=50000)
+trained_model = train_satellite_scheduler(training_scenarios, total_timesteps=100000)
 
 # Test the trained model
 print("\nStep 3: Testing trained model...")

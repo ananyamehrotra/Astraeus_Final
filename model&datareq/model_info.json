@@ -1,0 +1,11 @@
+{
+  "model_type": "PPO",
+  "training_episodes": 50000,
+  "final_reward": 847.3,
+  "best_reward": 892.1,
+  "performance_improvement": 23.4,
+  "training_completed": true,
+  "scenarios_count": 500,
+  "created_at": "2025-09-17T16:49:58.754507",
+  "note": "Mock training data for demonstration purposes"
+}

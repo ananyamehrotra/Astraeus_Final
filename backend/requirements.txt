@@ -10,3 +10,9 @@ pandas>=2.0.0
 eventlet>=0.33.0
 simple-websocket>=0.10.1
 
+# AI Model Dependencies (Optional - for full AI functionality)
+# Install with: pip install stable-baselines3[extra] torch
+# stable-baselines3>=2.0.0
+# torch>=2.0.0 you'll need python 3.10 or older for this
+# gymnasium>=0.29.0
+

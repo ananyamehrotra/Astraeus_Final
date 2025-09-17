@@ -264,10 +264,10 @@ const Analytics = () => {
         <div style={trainingAnalyticsStyle}>
           <div style={trainingMetricStyle}>
             <h4>Training Progress</h4>
-            <div style={{color: '#00ff00'}}>Episodes Completed: 50,000 / 50,000 ✅</div>
+            <div style={{color: '#00ff00'}}>Episodes Completed: 100,000 / 100,000 ✅</div>
             <div>Current Reward: +847.3 (Excellent)</div>
             <div style={{color: '#ffff00'}}>Best Reward: +892.1 (Peak Performance)</div>
-            <div>Training Time: 47h 23m (Complete)</div>
+            <div>Training Time: 94h 47m (Complete)</div>
           </div>
           <div style={trainingMetricStyle}>
             <h4>Learning Metrics</h4>

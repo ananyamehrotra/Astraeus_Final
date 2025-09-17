@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import ApiService from '../services/api';
 import { showNotification } from '../components/NotificationSystem';
+import AIScheduler from '../components/AIScheduler';
 
 const Schedule = () => {
   const [schedulingMode, setSchedulingMode] = useState('manual');
@@ -198,6 +199,9 @@ const Schedule = () => {
   return (
     <div>
       <h1>📅 Communication Schedule</h1>
+      
+      {/* AI Scheduler Integration */}
+      <AIScheduler />
       
       {/* Scheduling Control Panel */}
       <div className="card">
