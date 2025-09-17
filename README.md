@@ -518,31 +518,73 @@ An AI-powered Mission Control system that creates a **Digital Twin** of the sate
 - **Self-Healing Networks**: AI automatically reconfigures when satellites fail
 - **Predictive Maintenance**: ML predicts satellite component failures before they happen
 - **Autonomous Deployment**: AI manages satellite constellation expansion without human intervention
+- **Decentralized Onboard AI**: Push lightweight scheduling agents directly onto satellites for autonomous operation
+- **Unattended Operations**: 24/7 automated scheduling and monitoring with minimal human oversight
 
 ### 🌍 Multi-Planetary Networks
-- **Mars-Earth Relay**: Optimize communication across planetary distances
-- **Lunar Gateway Integration**: Include Moon-based relay stations in scheduling
+- **Mars-Earth Relay**: Optimize communication across planetary distances with 20-minute light delays
+- **Lunar Gateway Integration**: Include Moon-based relay stations in scheduling algorithms
 - **Deep Space Networks**: Extend to Jupiter, Saturn missions with extreme latency optimization
+- **Interplanetary Internet**: Establish robust communication protocols across solar system
+
+### 🏢 Enterprise-Grade Mission Control
+- **Virtualized Ground Systems**: VM/container-based resilient multi-mission operations
+- **Role-Based Security**: Crypto-integrated secure links with granular access control
+- **Integrated Flight Dynamics**: Real-time orbit prediction, conjunction analysis, and maneuver planning
+- **Modular Microservices**: REST APIs and plug-and-play architecture for existing ISRO workflows
+- **Cloud-Native Operations**: AI-enabled operations centers where one operator manages dozens of satellites
 
 ### 📊 Advanced AI Capabilities
+- **Explainable AI Scheduling**: Visual "reason maps" showing why specific communication windows were chosen
 - **Federated Learning**: Multiple space agencies train AI together while keeping data private
-- **Explainable AI**: Understand exactly why AI makes specific scheduling decisions
-- **Multi-Agent Systems**: Different AI agents for different satellite types (imaging, communication, navigation)
+- **Multi-Agent Systems**: Specialized AI agents for different satellite types (imaging, communication, navigation)
+- **Adaptive Learning**: Continuous improvement from operational data with transfer learning capabilities
+- **Graph Neural Networks**: Network-aware understanding that scales to mega-constellations
 
-### 🕰️ Real-Time Adaptive Systems
-- **Weather Integration**: AI adjusts schedules based on atmospheric conditions
-- **Threat Response**: Automatic rescheduling during space debris events
-- **Emergency Protocols**: Priority override for disaster response satellites
+### 🕰 Real-Time Adaptive Systems
+- **Weather Integration**: AI adjusts schedules based on atmospheric conditions and ground station weather
+- **Threat Response**: Automatic rescheduling during space debris events and solar storms
+- **Emergency Protocols**: Priority override for disaster response satellites with sub-minute activation
+- **Dynamic Resource Allocation**: Real-time bandwidth and power optimization across constellation
+- **Predictive Analytics**: Future constellation performance forecasting and capacity planning
 
-### 🎯 Commercial Applications
-- **Space Traffic Management**: Extend to all commercial satellite operators
-- **Satellite-as-a-Service**: On-demand satellite access through AI scheduling
-- **Space Internet**: Optimize global satellite internet constellations (Starlink, OneWeb, etc.)
+### 🎯 Commercial Applications & Space Economy
+- **Space Traffic Management**: Comprehensive coordination for all commercial satellite operators
+- **Satellite-as-a-Service**: On-demand satellite access through AI-optimized scheduling
+- **Space Internet Optimization**: Maximize efficiency for Starlink, OneWeb, Amazon Kuiper constellations
+- **Disaster Response Networks**: Automated priority systems for emergency communications
+- **Space Manufacturing**: Coordinate orbital factories and space-based industrial operations
+- **Space Tourism**: Optimize communication for commercial space flights and orbital hotels
 
 ### 🔮 Breakthrough Technologies
-- **Neuromorphic Computing**: Brain-inspired chips for ultra-low power space AI
-- **Optical Computing**: Light-based processors for faster-than-electronic scheduling
-- **DNA Storage**: Store massive constellation data in biological molecules
+- **Neuromorphic Computing**: Brain-inspired chips for ultra-low power space AI processing
+- **Optical Computing**: Light-based processors for faster-than-electronic scheduling calculations
+- **DNA Storage**: Store massive constellation data in biological molecules for long-term missions
+- **Swarm Intelligence**: Collective AI behavior for autonomous satellite swarms
+- **Digital Twin Evolution**: Self-updating simulations that learn from real-world satellite behavior
+
+### 🌟 ISRO-Specific Innovations
+- **Sovereign Space Infrastructure**: Independent, secure satellite management without foreign dependencies
+- **Cost-Effective Scaling**: Open-source foundation enabling affordable mega-constellation management
+- **Multi-Mission Integration**: Unified control for Earth observation, navigation, and communication satellites
+- **Indigenous AI Development**: Built-in-India AI capabilities for strategic space autonomy
+- **Chandrayaan & Mars Mission Support**: Specialized deep-space communication optimization
+
+---
+
+## 📚 Acknowledgments & Industry Research
+
+This project builds upon cutting-edge research and draws inspiration from leading space technology platforms worldwide. We acknowledge the pioneering work of:
+
+**Advanced Ground Systems**: Kratos OpenSpace platform for enterprise-grade security and virtualization concepts • GMV FocusSuite and HiFly for integrated flight dynamics and automated mission planning • Lockheed Martin Compass for modular microservices architecture and AI-enabled operations centers
+
+**Academic Research**: Graph Neural Networks research from Veličković et al. • Reinforcement Learning advances from OpenAI and DeepMind • Orbital mechanics foundations from NASA JPL and ESA
+
+**Open Source Community**: PyTorch Geometric team for graph neural network frameworks • Stable-Baselines3 contributors for reinforcement learning algorithms • Skyfield library by Brandon Rhodes for precise astronomical calculations
+
+**Data Sources**: NASA/NORAD for TLE satellite data • Celestrak for real-time orbital elements • ISRO for mission requirements and operational insights
+
+Project Astraeus combines these proven concepts with novel AI approaches, creating an open-source, cost-effective solution tailored for ISRO's strategic space autonomy while advancing the global space technology ecosystem.
 
 ---
 
