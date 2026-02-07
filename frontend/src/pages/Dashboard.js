@@ -4,7 +4,7 @@ import LiveCommunicationWindows from '../components/LiveCommunicationWindows';
 import SystemMetrics from '../components/SystemMetrics';
 import NotificationSystem from '../components/NotificationSystem';
 
-import ApiService from '../services/api';
+import apiService from '../services/api';
 import { showNotification } from '../components/NotificationSystem';
 
 
@@ -27,13 +27,13 @@ const Dashboard = () => {
   const fetchStatusData = async () => {
     try {
       // Fetch satellites
-      const satelliteResponse = await ApiService.getSatellites();
+      const satelliteResponse = await apiService.getSatellites();
       if (satelliteResponse.satellites) {
         setSatellites(satelliteResponse.satellites);
       }
 
       // Fetch ground stations
-      const groundStationResponse = await ApiService.getGroundStations();
+      const groundStationResponse = await apiService.getGroundStations();
       if (groundStationResponse.ground_stations) {
         setGroundStations(groundStationResponse.ground_stations);
       }
@@ -53,7 +53,7 @@ const Dashboard = () => {
 
   // Initialize WebSocket connection on component mount
   useEffect(() => {
-    ApiService.initializeWebSocket();
+    apiService.initializeWebSocket();
     
     // Fetch initial status data
     fetchStatusData();
@@ -63,7 +63,7 @@ const Dashboard = () => {
     
     // Cleanup on unmount
     return () => {
-      ApiService.disconnectWebSocket();
+      apiService.disconnectWebSocket();
       clearInterval(statusInterval);
     };
   }, []);
@@ -75,7 +75,7 @@ const Dashboard = () => {
       
       if (newState) {
         // Activate wildfire protocol via backend
-        const response = await ApiService.activateEmergency('wildfire');
+        const response = await apiService.activateEmergency('wildfire');
         if (response.status === 'success') {
           setWildfireProtocol(true);
           setEmergencyMode(true);
@@ -101,7 +101,7 @@ const Dashboard = () => {
 
   const prioritizeEarthObservation = async () => {
     try {
-      const response = await ApiService.activateEmergency('earth_observation');
+      const response = await apiService.activateEmergency('earth_observation');
       if (response.status === 'success') {
         showNotification('info', '📡 EARTH OBSERVATION PRIORITIZED', 
           `Backend priority activated - ${response.priority_channels} priority channels established`, 7000);
@@ -131,7 +131,7 @@ const Dashboard = () => {
     if (!isTraining) {
       try {
         // Run actual simulation as "AI training"
-        const response = await ApiService.runSimulation({
+        const response = await apiService.runSimulation({
           duration_hours: 24,
           start_time: getSafeISOString()
         });
@@ -149,7 +149,7 @@ const Dashboard = () => {
 
   const runSimulation = async () => {
     try {
-      const response = await ApiService.runSimulation({
+      const response = await apiService.runSimulation({
         duration_hours: 6,
         start_time: getSafeISOString()
       });
@@ -167,7 +167,7 @@ const Dashboard = () => {
       
       if (newState) {
         // Activate emergency override via backend
-        const response = await ApiService.activateEmergency('override');
+        const response = await apiService.activateEmergency('override');
         if (response.status === 'success') {
           setEmergencyMode(true);
           showNotification('error', '🚨 EMERGENCY OVERRIDE ACTIVATED', 
@@ -192,7 +192,7 @@ const Dashboard = () => {
   // File Operation Functions
   const exportSchedule = async (format = 'json') => {
     try {
-      const response = await ApiService.exportSchedule(format, '24h');
+      const response = await apiService.exportSchedule(format, '24h');
       
       // Create and trigger download
       const blob = new Blob([
@@ -225,7 +225,7 @@ const Dashboard = () => {
       const file = event.target.files[0];
       if (file) {
         try {
-          const response = await ApiService.importSchedule(file);
+          const response = await apiService.importSchedule(file);
           showNotification('success', '📥 Schedule Imported Successfully', 
             `Imported ${response.imported_windows} communication windows for ${response.imported_satellites} satellites from ${response.filename}.`, 8000);
         } catch (error) {
@@ -239,7 +239,7 @@ const Dashboard = () => {
 
   const generateReport = async () => {
     try {
-      const response = await ApiService.generateReport('summary', '24h');
+      const response = await apiService.generateReport('summary', '24h');
       
       // Create downloadable report
       const reportContent = JSON.stringify(response, null, 2);
@@ -284,7 +284,7 @@ const Dashboard = () => {
 
   const weatherIntegration = async () => {
     try {
-      const weatherData = await ApiService.getWeatherStatus();
+      const weatherData = await apiService.getWeatherStatus();
       if (weatherData.status === 'success') {
         showNotification('info', '🌤️ WEATHER INTEGRATION', 
           `Latest meteorological data: Clear skies: ${weatherData.clear_skies_percentage}% | Cloud cover: ${weatherData.cloud_cover_percentage}% | Visibility: ${weatherData.visibility_km}km | Conditions: ${weatherData.atmospheric_conditions}`, 8000);
